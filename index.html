@@ -4,8 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>세종 공직자 단골 식당 지도</title>
+  <script>
+    (function () {
+      var p = location.pathname || "/";
+      if (/\.html?$/i.test(p)) p = p.slice(0, p.lastIndexOf("/") + 1);
+      else if (!/\/$/.test(p)) p += "/";
+      var b = document.createElement("base");
+      b.href = p;
+      document.head.appendChild(b);
+    })();
+  </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="css/style.css?v=20260819" />
+  <link rel="stylesheet" href="css/style.css?v=20260704" />
 </head>
 <body>
   <header class="site-header">
@@ -46,6 +56,6 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="js/app.js?v=20260819" type="module"></script>
+  <script src="js/app.js?v=20260704" type="module"></script>
 </body>
 </html>

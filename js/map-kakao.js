@@ -110,6 +110,29 @@ export function relayoutKakaoMap(map) {
   }
 }
 
+/** 타일·캔버스가 실제로 그려졌는지 확인 (도메인 미등록 시 빈 지도 방지) */
+export function verifyKakaoMapReady(containerId = "map", timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const tick = () => {
+      const el = document.getElementById(containerId);
+      const hasTiles =
+        Boolean(el?.querySelector("img[src*='map.daum'], img[src*='kakao'], canvas")) ||
+        (el?.childElementCount ?? 0) >= 2;
+      if (hasTiles) {
+        resolve(true);
+        return;
+      }
+      if (Date.now() - start > timeoutMs) {
+        resolve(false);
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+}
+
 export function focusKakaoOnOffice(maps, map, view = SEJONG_OFFICE_VIEW) {
   if (!map || !maps) return;
   relayoutKakaoMap(map);

@@ -13,9 +13,10 @@ import {
   waitForWindowReady,
   dropletPinHtml,
   centerMapOn,
-} from "./map-kakao.js?v=20260819";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260819";
-import { mergeOverlappingMarkerItems } from "./map-overlap-stack.js?v=20260819";
+  verifyKakaoMapReady,
+} from "./map-kakao.js?v=20260704";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260704";
+import { mergeOverlappingMarkerItems } from "./map-overlap-stack.js?v=20260704";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -69,8 +70,20 @@ let drawerVenues = [];
 const ENABLE_MARKER_HOVER = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const CORP_TOKEN_RE = /\(주\)([^()（）]+)|㈜([^()（）]+)|주식회사\s*([^\s,()]+)/g;
 
-function setMetaStatus(_text) {
-  /* 헤더 메타 제거 — 로딩 상태는 콘솔만 */
+function setMetaStatus(text) {
+  if (text) console.info("[map]", text);
+}
+
+function getAppBasePath() {
+  let path = window.location.pathname || "/";
+  if (/\.html?$/i.test(path)) return path.slice(0, path.lastIndexOf("/") + 1);
+  if (!path.endsWith("/")) path += "/";
+  return path;
+}
+
+function resolvePublicUrl(path) {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${getAppBasePath()}${String(path).replace(/^\//, "")}`;
 }
 
 async function loadMapConfig() {
@@ -86,8 +99,9 @@ async function loadMapConfig() {
 async function loadJson(path, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const url = resolvePublicUrl(path);
   try {
-    const res = await fetch(path, { signal: controller.signal });
+    const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error(`${path} ${res.status}`);
     return res.json();
   } catch (err) {
@@ -801,6 +815,10 @@ async function initKakaoMap(jsKey) {
   kakaoMaps = await loadKakaoSdk(jsKey, KAKAO_SDK_TIMEOUT_MS);
   mapProvider = "kakao";
   map = createKakaoMap(kakaoMaps, SEJONG_OFFICE_VIEW);
+  const ready = await verifyKakaoMapReady("map", 3000);
+  if (!ready) {
+    throw new Error("Kakao map tiles did not load (check Web domain whitelist)");
+  }
 }
 
 function closeOpenPopups() {
@@ -1375,6 +1393,10 @@ async function main() {
       } catch (err) {
         console.warn("Kakao map fallback to Leaflet:", err);
         initLeafletMap(SEJONG_OFFICE_VIEW);
+        showMapToast(
+          "카카오맵을 불러오지 못해 OSM 지도로 표시합니다. 카카오 Developers → JavaScript 키 → Web 사이트 도메인에 이 사이트 주소를 등록하면 로컬과 동일한 카카오맵이 열립니다.",
+          9000
+        );
       }
     } else {
       initLeafletMap(SEJONG_OFFICE_VIEW);
@@ -1382,11 +1404,17 @@ async function main() {
 
     await addMarkers();
     fitInitialView();
-    refineAndSyncMarkerCoords(asOf);
+    refineAndSyncMarkerCoords(asOf).catch((err) => {
+      console.warn("POI coord refine skipped:", err);
+    });
     setupMapResize();
     renderSources(asOf);
+    if (mapMarkerCount > 0) {
+      setMetaStatus(`마커 ${mapMarkerCount}개 · ${mapProviderLabel()}`);
+    }
   } catch (err) {
     setMetaStatus(`오류: ${err.message}`);
+    showMapToast(`지도를 불러오지 못했습니다: ${err.message}`, 12000);
     console.error(err);
   }
 }
