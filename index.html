@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>세종 공직자 단골 식당 지도</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="css/style.css?v=20260819" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <p class="brand-eyebrow">세종특별자치시</p>
+      <h1 class="brand-title">공직자 단골 식당 지도</h1>
+    </div>
+    <div class="header-meta">
+      <div id="map-legend" class="map-legend" hidden></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="map-panel">
+      <aside id="venue-drawer" class="venue-drawer" aria-hidden="true">
+        <div class="venue-drawer-panel">
+          <div class="venue-drawer-top">
+            <h2 id="venue-drawer-title" class="venue-drawer-title"></h2>
+            <p id="venue-drawer-addr" class="venue-drawer-addr"></p>
+          </div>
+          <div id="venue-drawer-scroll" class="venue-drawer-scroll">
+            <ul id="venue-drawer-list" class="venue-drawer-list"></ul>
+          </div>
+        </div>
+      </aside>
+      <button type="button" id="venue-drawer-toggle" class="drawer-edge-btn" aria-label="목록 열기" aria-controls="venue-drawer" aria-expanded="false"><span id="venue-drawer-toggle-icon" aria-hidden="true">›</span></button>
+      <div id="map"></div>
+      <div id="map-toast" class="map-toast" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p id="disclaimer">
+      세종특별자치시·정부세종청사 등 공개 업무추진비 내역을 바탕으로 방문 횟수를 집계·표시했습니다.
+      특정 식당을 추천하거나 평가하기 위한 목적이 아닙니다.
+    </p>
+    <p class="sources" id="sources"></p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/app.js?v=20260819" type="module"></script>
+</body>
+</html>
