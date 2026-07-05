@@ -15,7 +15,7 @@
     })();
   </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="css/style.css?v=20260726" />
+  <link rel="stylesheet" href="css/style.css?v=20260727" />
   <script>
     (function () {
       var DEFAULT_MSG = "지도 정보를 업데이트하고 있습니다. 잠시 후 새로고침해 주세요.";
@@ -25,6 +25,7 @@
         host === "localhost" ||
         host === "127.0.0.1" ||
         location.protocol === "file:";
+      var maintenancePollTimer = null;
       window.__showSiteMaintenance = function (msg) {
         var panel = document.getElementById("site-maintenance");
         var text = document.getElementById("site-maintenance-msg");
@@ -34,14 +35,42 @@
           document.body.classList.add("is-maintenance");
         }
       };
+      window.__hideSiteMaintenance = function () {
+        var panel = document.getElementById("site-maintenance");
+        if (panel) panel.hidden = true;
+        document.body.classList.remove("is-maintenance");
+      };
+      function pollMaintenanceUntilOpen() {
+        if (maintenancePollTimer) return;
+        maintenancePollTimer = window.setInterval(function () {
+          fetch("data/maintenance.json?v=" + Date.now())
+            .then(function (res) {
+              return res.ok ? res.json() : null;
+            })
+            .then(function (data) {
+              if (!data || !data.active) {
+                window.clearInterval(maintenancePollTimer);
+                maintenancePollTimer = null;
+                window.location.reload();
+              }
+            })
+            .catch(function () {});
+        }, 2500);
+      }
+      function applyMaintenanceState(data) {
+        if (data && data.active) {
+          window.__showSiteMaintenance(data.message);
+          pollMaintenanceUntilOpen();
+          return;
+        }
+        window.__hideSiteMaintenance();
+      }
       if (isLocalPreview) return;
       fetch("data/maintenance.json?v=" + Date.now())
         .then(function (res) {
           return res.ok ? res.json() : null;
         })
-        .then(function (data) {
-          if (data && data.active) window.__showSiteMaintenance(data.message);
-        })
+        .then(applyMaintenanceState)
         .catch(function () {});
     })();
   </script>
@@ -100,6 +129,6 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="js/app.js?v=20260726" type="module"></script>
+  <script src="js/app.js?v=20260727" type="module"></script>
 </body>
 </html>
