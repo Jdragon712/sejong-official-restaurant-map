@@ -1,1 +1,1 @@
-RESTORE_IN_PROGRESS_USE_PUSH_SCRIPT
+repo://Jdragon712/sejong-official-restaurant-map/sha/3b0a12536ebe965c525b3138882bd64053db0739/contents/js/app.js
