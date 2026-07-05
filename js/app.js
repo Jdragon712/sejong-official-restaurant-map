@@ -1,1 +1,1 @@
-/Users/bagjin-yong/Desktop/헤르메스 비서/부업/맛집앱/web/js/app.js
+file:///Users/bagjin-yong/.grok/sessions/%2FUsers%2Fbagjin-yong/019f3016-c5e8-7173-9c47-d4bfa9530a56/mcp/call-d83655ea-22b5-4b78-bce0-978bd6342726-composer_call_BHaN7.txt
