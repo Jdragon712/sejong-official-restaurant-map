@@ -1174,3 +1174,60 @@ body {
   color: var(--text-secondary);
   line-height: 1.35;
 }
+
+.site-maintenance[hidden] {
+  display: none !important;
+}
+
+.site-maintenance {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(0, 160, 198, 0.18), transparent 60%),
+    rgba(243, 246, 249, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.site-maintenance-card {
+  width: min(100%, 420px);
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+
+.site-maintenance-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--sejong-sky);
+}
+
+.site-maintenance-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+
+.site-maintenance-msg {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+body.is-maintenance .site-header,
+body.is-maintenance .layout,
+body.is-maintenance .site-footer {
+  visibility: hidden;
+}
