@@ -1,1 +1,1 @@
-await import("./app.js?v=20260719");
+await import("./app.js?v=20260720");
