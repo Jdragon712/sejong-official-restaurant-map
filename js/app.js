@@ -1,1 +1,1 @@
-/Users/bagjin-yong/Desktop/헤르메스 비서/부업/맛집앱/web/js/app.js
+PLACEHOLDER_WILL_REPLACE
