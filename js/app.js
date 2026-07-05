@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260706";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260706";
+} from "./map-kakao.js?v=20260709";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260709";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260706";
+} from "./map-overlap-stack.js?v=20260709";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -142,6 +142,7 @@ function normalizeClusterAddress(r) {
 
 /** 도로명+번지만 (층·호·동명 제거) — 동일 건물 판별 */
 function buildingAddressKey(r) {
+  if (r?._mapBuildingKey) return r._mapBuildingKey;
   let addr = cleanDisplayField(r.address_road);
   if (!addr) addr = cleanDisplayField(r.geocode_address);
   if (!addr) return "";
@@ -160,6 +161,37 @@ function brandMergeKey(r) {
   return stripBranchSuffix(extractCoreName(brand)).toLowerCase();
 }
 
+/** 업추비 상호 괄호 안 실제 방문처 (예: 세종(송도갈비) → 송도갈비) */
+function expenseVisitTarget(r) {
+  const name = cleanDisplayField(r.name);
+  const m = name.match(/[(\（]([^)）]+)[)\）]/);
+  if (!m) return "";
+  return stripBranchSuffix(extractCoreName(m[1])).toLowerCase();
+}
+
+function normalizedBrandKey(r) {
+  const visitTarget = expenseVisitTarget(r);
+  if (visitTarget) {
+    if (visitTarget.includes("송도갈비")) return "송도갈비";
+    return visitTarget;
+  }
+  const brand = brandMergeKey(r);
+  if (brand.includes("송도갈비")) return "송도갈비";
+  return brand;
+}
+
+/** 드로어·팝업 표시명 — 괄호 방문처가 인허가 상호와 다를 때 방문처 우선 */
+function mapDisplayName(r) {
+  const visitTarget = expenseVisitTarget(r);
+  const brand = brandMergeKey(r);
+  if (visitTarget && visitTarget !== brand && !brandsAreSimilar(visitTarget, brand)) {
+    const raw = cleanDisplayField(r.name);
+    const m = raw.match(/[(\（]([^)）]+)[)\）]/);
+    if (m) return m[1].trim();
+  }
+  return brandNameFromVenue(r);
+}
+
 function brandsAreSimilar(a, b) {
   if (!a || !b) return false;
   if (a === b) return true;
@@ -169,7 +201,7 @@ function brandsAreSimilar(a, b) {
 
 function markerOverlapKey(r) {
   const building = buildingAddressKey(r);
-  const brand = brandMergeKey(r);
+  const brand = normalizedBrandKey(r);
   if (building && brand) return `ob:${building}::${brand}`;
   return venueClusterKey(r) || locationKey(r);
 }
@@ -185,8 +217,9 @@ function venueClusterKey(r) {
 /** 동일 건물·브랜드 또는 인허가 ID 기준 합산 (업추비 상호 변형·유사 상호) */
 function venueMergeKey(r) {
   if (!r) return null;
+  const brand = normalizedBrandKey(r);
+  if (brand === "송도갈비") return "brand:송도갈비";
   const building = buildingAddressKey(r);
-  const brand = brandMergeKey(r);
   if (building && brand) return `bld:${building}::${brand}`;
   if (r.restaurant_id) return `id:${r.restaurant_id}`;
   const clusterKey = venueClusterKey(r);
@@ -209,7 +242,7 @@ function mergeVenueRows(members) {
   if (!members?.length) return null;
   if (members.length === 1) {
     const row = { ...members[0] };
-    row._displayName = row._displayName || brandNameFromVenue(row);
+    row._displayName = row._displayName || mapDisplayName(row);
     return row;
   }
 
@@ -224,12 +257,12 @@ function mergeVenueRows(members) {
   const aliasNames = mergeVenueMemberNames(members, canonical);
   return {
     ...canonical,
-    _displayName: brandNameFromVenue(canonical),
+    _displayName: mapDisplayName(canonical),
     _mergedMembers: members,
     _mergeAliasNames: aliasNames,
     _listKey: canonical._listKey || listRowKey(canonical),
     _clusterKey: canonical._clusterKey || venueClusterKey(canonical),
-    name: brandNameFromVenue(canonical),
+    name: mapDisplayName(canonical),
     last_visit_date: lastVisit,
     [visitCountField]: totalVisits,
   };
@@ -267,10 +300,133 @@ function rebuildAddressCoordIndex() {
   });
 }
 
-/** 좌표 없으면 동일 건물·유사 브랜드 또는 정확 인허가 연결로만 보강 */
+function corpTokensFromText(text) {
+  const tokens = new Set();
+  const raw = cleanDisplayField(text);
+  if (!raw) return tokens;
+  for (const match of raw.matchAll(CORP_TOKEN_RE)) {
+    const piece = extractCoreName(match[1] || match[2] || match[3] || "");
+    if (piece.length >= 4) tokens.add(piece);
+  }
+  const stripped = extractCoreName(raw.replace(/\(주\)|\(유\)|㈜/g, ""));
+  if (stripped.length >= 4) tokens.add(stripped);
+  return tokens;
+}
+
+function resolveCorpTokenCoords(r) {
+  const query = corpTokensFromText(r.name);
+  if (!query.size) return null;
+
+  let best = null;
+  let bestScore = 0;
+  restaurants.forEach((x) => {
+    if (x.lat == null || x.lng == null) return;
+    const blobs = [cleanDisplayField(x.permit_name), cleanDisplayField(x.name)].filter(Boolean);
+    blobs.forEach((blob) => {
+      corpTokensFromText(blob).forEach((token) => {
+        query.forEach((q) => {
+          if (q === token || (q.length >= 4 && token.includes(q)) || (token.length >= 4 && q.includes(token))) {
+            const score = 100 + visitCount(x);
+            if (score > bestScore) {
+              bestScore = score;
+              best = x;
+            }
+          }
+        });
+      });
+    });
+  });
+  return best;
+}
+
+function resolveExpenseNameCoords(r) {
+  const target = expenseVisitTarget(r);
+  if (!target || target.length < 3) return null;
+
+  let best = null;
+  let bestScore = 0;
+  restaurants.forEach((x) => {
+    if (x.lat == null || x.lng == null) return;
+    const labels = [
+      normalizedBrandKey(x),
+      brandMergeKey(x),
+      extractCoreName(cleanDisplayField(x.name)).toLowerCase(),
+    ];
+    labels.forEach((label) => {
+      if (!label) return;
+      let score = 0;
+      if (label === target) score = 120;
+      else if (label.includes(target) || target.includes(label)) score = 80;
+      if (score > bestScore) {
+        bestScore = score;
+        best = x;
+      }
+    });
+  });
+  return bestScore >= 80 ? best : null;
+}
+
+function expenseVisitOverridesPermit(r) {
+  const target = expenseVisitTarget(r);
+  if (!target || target.length < 3) return false;
+  const permitBrands = [
+    normalizedBrandKey(r),
+    brandMergeKey(r),
+    extractCoreName(cleanDisplayField(r.permit_name || "")).toLowerCase(),
+  ].filter(Boolean);
+  return !permitBrands.some((brand) => brand.includes(target) || target.includes(brand));
+}
+
+function linkFromExpensePeer(r, expenseHit) {
+  return snapToBuildingCoord({
+    ...r,
+    lat: expenseHit.lat,
+    lng: expenseHit.lng,
+    geocode_address:
+      expenseHit.geocode_address || cleanDisplayField(expenseHit.address_road) || r.geocode_address,
+    _mapBuildingKey: buildingAddressKey(expenseHit),
+    _coordLinkedFrom: brandNameFromVenue(expenseHit),
+    _coordFromExpenseName: true,
+  });
+}
+
+function snapToBuildingCoord(r) {
+  if (!r || r.lat == null || r.lng == null) return r;
+  const bldKey = buildingAddressKey(r);
+  if (!bldKey || !buildingCoordIndex.has(bldKey)) return r;
+  const src = buildingCoordIndex.get(bldKey);
+  if (src?.lat == null || src?.lng == null) return r;
+  return { ...r, lat: src.lat, lng: src.lng };
+}
+
+/** 좌표 없으면 괄호 방문처 → 동일 건물·유사 브랜드 → 정확 인허가 연결 순으로 보강 */
 function resolveVenueCoords(r) {
   if (!r) return r;
-  if (r.lat != null && r.lng != null) return r;
+
+  const expenseHit = resolveExpenseNameCoords(r);
+  if (expenseHit && expenseVisitOverridesPermit(r)) {
+    return linkFromExpensePeer(r, expenseHit);
+  }
+
+  if (r.lat != null && r.lng != null) return snapToBuildingCoord(r);
+
+  if (expenseHit) {
+    return linkFromExpensePeer(r, expenseHit);
+  }
+
+  const corpHit = resolveCorpTokenCoords(r);
+  if (corpHit) {
+    const linked = {
+      ...r,
+      lat: corpHit.lat,
+      lng: corpHit.lng,
+      geocode_address: corpHit.geocode_address || cleanDisplayField(corpHit.address_road) || r.geocode_address,
+      _mapBuildingKey: buildingAddressKey(corpHit),
+      _coordLinkedFrom: brandNameFromVenue(corpHit),
+      _coordFromCorpToken: true,
+    };
+    return snapToBuildingCoord(linked);
+  }
 
   const bldKey = buildingAddressKey(r);
   if (bldKey && buildingCoordIndex.has(bldKey)) {
@@ -295,7 +451,7 @@ function resolveVenueCoords(r) {
     };
   }
 
-  return r;
+  return snapToBuildingCoord(r);
 }
 
 function isMapMarkerVenue(r) {
@@ -1039,7 +1195,7 @@ function renderDrawerList(venues, expandRowKey = activeId) {
     const rowKey = venue._listKey || listRowKey(venue);
     const info = getVisitRankInfo(venue);
     const tier = info?.tier ?? 5;
-    const name = venue._displayName || brandNameFromVenue(venue);
+    const name = venue._displayName || mapDisplayName(venue);
     const li = document.createElement("li");
     li.className = "venue-drawer-row";
     const expanded = rowKey === expandRowKey;

@@ -16317,7 +16317,12 @@
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-02-06",
       "distinct_depts": 1,
-      "match_status": "unmatched"
+      "match_status": "unmatched",
+      "lat": 36.478511319151,
+      "lng": 127.287328280833,
+      "geocode_address": "세종특별자치시 한누리대로 2150",
+      "geocode_provider": "expense_name_peer",
+      "geocode_linked_from": "저림숙성그릴"
     },
     {
       "restaurant_id": "venue:146c83141546",
@@ -28209,7 +28214,12 @@
       "address_road": "세종특별자치시 나성로 133-15, 애플타워 1층 110호 (나성동)",
       "address_jibun": "세종특별자치시 나성동 791 애플타워",
       "category_app": "일반음식점",
-      "match_status": "exact"
+      "match_status": "exact",
+      "lat": 36.478511319151,
+      "lng": 127.287328280833,
+      "geocode_address": "세종특별자치시 한누리대로 2150",
+      "geocode_provider": "expense_name_peer",
+      "geocode_linked_from": "저림숙성그릴"
     },
     {
       "restaurant_id": "venue:9d41cbbf3bb2",
