@@ -1,1 +1,7 @@
-fs:/Users/bagjin-yong/Desktop/헤르메스 비서/부업/맛집앱/web/js/app.js
+import {
+  addKakaoMarkersBatched,
+} from "./map-kakao.js?v=20260717";
+
+function corpTokensFromText(text) {
+  return new Set();
+}
