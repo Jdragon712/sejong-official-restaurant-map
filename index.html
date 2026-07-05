@@ -15,7 +15,36 @@
     })();
   </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="css/style.css?v=20260720" />
+  <link rel="stylesheet" href="css/style.css?v=20260726" />
+  <script>
+    (function () {
+      var DEFAULT_MSG = "지도 정보를 업데이트하고 있습니다. 잠시 후 새로고침해 주세요.";
+      var host = location.hostname;
+      var isLocalPreview =
+        !host ||
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        location.protocol === "file:";
+      window.__showSiteMaintenance = function (msg) {
+        var panel = document.getElementById("site-maintenance");
+        var text = document.getElementById("site-maintenance-msg");
+        if (text) text.textContent = msg || DEFAULT_MSG;
+        if (panel) {
+          panel.hidden = false;
+          document.body.classList.add("is-maintenance");
+        }
+      };
+      if (isLocalPreview) return;
+      fetch("data/maintenance.json?v=" + Date.now())
+        .then(function (res) {
+          return res.ok ? res.json() : null;
+        })
+        .then(function (data) {
+          if (data && data.active) window.__showSiteMaintenance(data.message);
+        })
+        .catch(function () {});
+    })();
+  </script>
   <script
     async
     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9196941060199524"
@@ -23,6 +52,16 @@
   ></script>
 </head>
 <body>
+  <div id="site-maintenance" class="site-maintenance" hidden>
+    <div class="site-maintenance-card">
+      <p class="site-maintenance-eyebrow">공직자 단골 식당</p>
+      <h2 class="site-maintenance-title">정보 업데이트 중</h2>
+      <p id="site-maintenance-msg" class="site-maintenance-msg">
+        지도 정보를 업데이트하고 있습니다. 잠시 후 새로고침해 주세요.
+      </p>
+    </div>
+  </div>
+
   <header class="site-header">
     <div class="brand">
       <p class="brand-eyebrow">세종특별자치시</p>
@@ -61,6 +100,6 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="js/app.js?v=20260720" type="module"></script>
+  <script src="js/app.js?v=20260726" type="module"></script>
 </body>
 </html>
