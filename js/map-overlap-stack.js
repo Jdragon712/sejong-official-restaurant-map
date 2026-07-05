@@ -1,6 +1,6 @@
-/** 겹치는 마커만 무지개 1개로 묶음 (동일·근접 좌표) */
+/** 겹치는 마커만 무지개 1개로 묶음 (동일 건물·브랜드 또는 극근접 좌표) */
 
-export const OVERLAP_RADIUS_M = 40;
+export const OVERLAP_RADIUS_M = 25;
 
 export function haversineDistanceM(a, b) {
   const R = 6371000;
@@ -15,7 +15,7 @@ export function haversineDistanceM(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-function findConnectedGroups(items, radiusM) {
+function findConnectedGroups(items, shouldCluster) {
   const n = items.length;
   if (n === 0) return [];
 
@@ -34,7 +34,7 @@ function findConnectedGroups(items, radiusM) {
 
   for (let i = 0; i < n; i += 1) {
     for (let j = i + 1; j < n; j += 1) {
-      if (haversineDistanceM(items[i], items[j]) <= radiusM) {
+      if (shouldCluster(items[i], items[j])) {
         union(i, j);
       }
     }
@@ -54,8 +54,14 @@ function findConnectedGroups(items, radiusM) {
  * @param {object[]} items
  * @param {{ buildStackItem: Function, prepareIndividual: Function }} hooks
  */
-export function mergeOverlappingMarkerItems(items, { buildStackItem, prepareIndividual }) {
-  const groups = findConnectedGroups(items, OVERLAP_RADIUS_M);
+export function mergeOverlappingMarkerItems(
+  items,
+  { buildStackItem, prepareIndividual, shouldCluster }
+) {
+  const cluster =
+    shouldCluster ||
+    ((a, b) => haversineDistanceM(a, b) <= OVERLAP_RADIUS_M);
+  const groups = findConnectedGroups(items, cluster);
   const result = [];
 
   for (const group of groups) {

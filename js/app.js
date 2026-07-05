@@ -14,9 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260704";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260704";
-import { mergeOverlappingMarkerItems } from "./map-overlap-stack.js?v=20260704";
+} from "./map-kakao.js?v=20260705";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260705";
+import {
+  haversineDistanceM,
+  mergeOverlappingMarkerItems,
+  OVERLAP_RADIUS_M,
+} from "./map-overlap-stack.js?v=20260705";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -136,6 +140,40 @@ function normalizeClusterAddress(r) {
   return addr.replace(/세종특별자치시/g, "세종").replace(/\s+/g, "").toLowerCase();
 }
 
+/** 도로명+번지만 (층·호·동명 제거) — 동일 건물 판별 */
+function buildingAddressKey(r) {
+  let addr = cleanDisplayField(r.address_road);
+  if (!addr) addr = cleanDisplayField(r.geocode_address);
+  if (!addr) return "";
+  const normalized = addr
+    .replace(/세종특별자치시|세종특별시|세종시/g, "세종")
+    .replace(/\([^)]*\)/g, "")
+    .trim();
+  const head = normalized.split(",")[0] || normalized;
+  const matched = head.match(/^(.*?)(\d+(?:-\d+)?)/);
+  const base = matched ? `${matched[1]}${matched[2]}` : head;
+  return base.replace(/\s+/g, "").toLowerCase();
+}
+
+function brandMergeKey(r) {
+  const brand = brandNameFromVenue(r);
+  return stripBranchSuffix(extractCoreName(brand)).toLowerCase();
+}
+
+function brandsAreSimilar(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  return shorter.length >= 4 && longer.includes(shorter);
+}
+
+function markerOverlapKey(r) {
+  const building = buildingAddressKey(r);
+  const brand = brandMergeKey(r);
+  if (building && brand) return `ob:${building}::${brand}`;
+  return venueClusterKey(r) || locationKey(r);
+}
+
 function venueClusterKey(r) {
   if (!r || r.lat == null || r.lng == null) return null;
   const name = normalizeClusterName(r);
@@ -144,9 +182,12 @@ function venueClusterKey(r) {
   return `vn:${name}::${addr}`;
 }
 
-/** 동일 인허가·상호·주소 묶음 키 (업추비 상호 변형 행 합산용) */
+/** 동일 건물·브랜드 또는 인허가 ID 기준 합산 (업추비 상호 변형·유사 상호) */
 function venueMergeKey(r) {
   if (!r) return null;
+  const building = buildingAddressKey(r);
+  const brand = brandMergeKey(r);
+  if (building && brand) return `bld:${building}::${brand}`;
   if (r.restaurant_id) return `id:${r.restaurant_id}`;
   const clusterKey = venueClusterKey(r);
   if (clusterKey) return clusterKey;
@@ -211,36 +252,40 @@ function sortByVisitRank(a, b) {
   return ta - tb || visitCount(b) - visitCount(a) || a.name.localeCompare(b.name, "ko");
 }
 
-let addressCoordIndex = new Map();
+let buildingCoordIndex = new Map();
 
 function rebuildAddressCoordIndex() {
-  addressCoordIndex = new Map();
+  buildingCoordIndex = new Map();
   restaurants.forEach((row) => {
     if (row.lat == null || row.lng == null) return;
-    const key = normalizeClusterAddress(row);
-    if (key && !addressCoordIndex.has(key)) {
-      addressCoordIndex.set(key, row);
+    const key = buildingAddressKey(row);
+    if (!key) return;
+    const prev = buildingCoordIndex.get(key);
+    if (!prev || visitCount(row) > visitCount(prev)) {
+      buildingCoordIndex.set(key, row);
     }
   });
 }
 
-/** 좌표 없으면 동일 주소·인허가 연결로 보강 */
+/** 좌표 없으면 동일 건물·유사 브랜드 또는 정확 인허가 연결로만 보강 */
 function resolveVenueCoords(r) {
   if (!r) return r;
   if (r.lat != null && r.lng != null) return r;
 
-  const addrKey = normalizeClusterAddress(r);
-  if (addrKey && addressCoordIndex.has(addrKey)) {
-    const src = addressCoordIndex.get(addrKey);
-    return {
-      ...r,
-      lat: src.lat,
-      lng: src.lng,
-      _coordLinkedFrom: brandNameFromVenue(src),
-    };
+  const bldKey = buildingAddressKey(r);
+  if (bldKey && buildingCoordIndex.has(bldKey)) {
+    const src = buildingCoordIndex.get(bldKey);
+    if (brandsAreSimilar(brandMergeKey(r), brandMergeKey(src))) {
+      return {
+        ...r,
+        lat: src.lat,
+        lng: src.lng,
+        _coordLinkedFrom: brandNameFromVenue(src),
+      };
+    }
   }
 
-  const { mapTarget } = resolveMapTarget(r);
+  const { mapTarget } = resolveMapTarget(r, { forCoords: true });
   if (mapTarget?.lat != null && mapTarget?.lng != null) {
     return {
       ...r,
@@ -262,6 +307,7 @@ function prepareIndividualMarkerItem(r) {
   const row = { ...r };
   row._clusterKey = row._clusterKey || venueClusterKey(row);
   row._listKey = row._listKey || listRowKey(row);
+  row._overlapKey = row._overlapKey || markerOverlapKey(row);
   row._isStackMarker = false;
   return row;
 }
@@ -293,6 +339,12 @@ function restaurantsForMapMarkers() {
   return mergeOverlappingMarkerItems(deduped, {
     prepareIndividual: prepareIndividualMarkerItem,
     buildStackItem: buildStackMarkerItem,
+    shouldCluster: (a, b) => {
+      if (a._overlapKey && b._overlapKey && a._overlapKey === b._overlapKey) {
+        return haversineDistanceM(a, b) <= OVERLAP_RADIUS_M;
+      }
+      return false;
+    },
   });
 }
 
@@ -640,7 +692,19 @@ function scoreLinkCandidate(queryVariants, x) {
   return best;
 }
 
-function resolveMapTarget(r) {
+function mapTargetsShareBuilding(a, b) {
+  const keyA = buildingAddressKey(a);
+  const keyB = buildingAddressKey(b);
+  return Boolean(keyA && keyB && keyA === keyB);
+}
+
+function isExactMapLink(r, target, score) {
+  if (!target) return false;
+  if (score >= 120) return true;
+  return mapTargetsShareBuilding(r, target) && brandsAreSimilar(brandMergeKey(r), brandMergeKey(target));
+}
+
+function resolveMapTarget(r, { forCoords = false } = {}) {
   if (r.lat != null && r.lng != null) {
     return { mapTarget: r, linkedFrom: null };
   }
@@ -648,9 +712,15 @@ function resolveMapTarget(r) {
   const variants = linkNameVariants(r.name);
   for (const core of variants) {
     const indexed = corpPermitLinks.get(core);
-    if (indexed) {
+    if (!indexed) continue;
+    const score = scoreLinkCandidate(variants, indexed);
+    if (!forCoords || isExactMapLink(r, indexed, score)) {
       return { mapTarget: indexed, linkedFrom: r };
     }
+  }
+
+  if (forCoords) {
+    return { mapTarget: null, linkedFrom: r };
   }
 
   let best = null;
