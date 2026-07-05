@@ -30,6 +30,16 @@ const SOURCES = [
 
 const BUCKET_COLOR = { high: "#e85d4c", medium: "#f0a500", low: "#5cb85c" };
 const MIN_MAP_VISITS = 10;
+/** POI 없고 이 기간 내 업추비가 없으면 폐업·이전으로 보고 지도 마커 제외 */
+const STALE_VENUE_MONTHS = 12;
+/** 역사 매점·마트·푸드코트 법인명 등 — 식당이 아닌 업추비 결제 상대 */
+const RETAIL_VENDOR_RE =
+  /코레일\s*유통|코레일유통|하나로\s*마트|하나로마트|농협유통|우리\s*마트|우리마트/i;
+/** 이마트 본점·24·에브리데이 결제 (회코너·매장 내 식당 인허가는 제외) */
+const IMART_RETAIL_RE =
+  /이마트\s*24|이마트24|이마트\s*에브리데이|이마트에브리데이|^(?:㈜|\(주\))?\s*이마트(?:\s*세종|\s*도담|$)|^이마트$/i;
+/** 인허가 없이 지명·시설명만 잡힌 업추비 상호 (선운산풍천장어 등 식당은 제외) */
+const NON_RESTAURANT_EXACT_NAMES = new Set(["운산"]);
 let visitCountField = "visit_count_total";
 
 function visitCount(r) {
@@ -194,6 +204,89 @@ function normalizedBrandKey(r) {
 function mapPoiLabel(r) {
   const poi = cleanDisplayField(r?.geocode_place_name);
   return poi.length >= 2 ? poi : "";
+}
+
+function parseVisitDate(value) {
+  const raw = cleanDisplayField(value);
+  if (!raw) return null;
+  const parts = raw.split("-").map(Number);
+  if (parts.length < 3 || parts.some((n) => Number.isNaN(n))) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function staleCheckMembers(r) {
+  if (r._mergedMembers?.length) return r._mergedMembers;
+  return [r];
+}
+
+/** 방문 횟수가 가장 많은 상호 변형의 최근 방문일 (소수 최신 결제에 끌려가지 않도록) */
+function dominantLastVisitDate(r) {
+  const members = staleCheckMembers(r);
+  const dominant = [...members].sort((a, b) => visitCount(b) - visitCount(a))[0];
+  return dominant?.last_visit_date || r.last_visit_date;
+}
+
+function lastVisitWithinMonths(r, months) {
+  const visited = parseVisitDate(dominantLastVisitDate(r));
+  if (!visited) return false;
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - months);
+  cutoff.setHours(0, 0, 0, 0);
+  return visited >= cutoff;
+}
+
+/** 좌표를 다른 업소에서 빌려온 경우 POI로 치지 않음 */
+function hasOwnMapPoi(r) {
+  if (r._coordLinkedFrom || r._coordFromCorpToken || r._coordFromExpenseName) return false;
+  return mapPoiLabel(r).length >= 2;
+}
+
+/** 카카오 POI 없음 + 최근 업추비 없음 → 폐업·이전 추정 */
+function isLikelyClosedForMap(r) {
+  if (hasOwnMapPoi(r)) return false;
+  return !lastVisitWithinMonths(r, STALE_VENUE_MONTHS);
+}
+
+function venueNameBlobs(r) {
+  return [r.name, r.permit_name, r._displayName, r.geocode_place_name]
+    .map(cleanDisplayField)
+    .filter(Boolean);
+}
+
+/** 회코너·매장 내 음식점 인허가가 있으면 이마트 결제라도 지도에 유지 */
+function hasFoodCornerPermit(r) {
+  const permit = cleanDisplayField(r.permit_name);
+  if (/회코너/i.test(permit)) return true;
+  if (permit && !/^(?:\(주\)|㈜)?\s*이마트(?:\s|세종|$)/i.test(permit)) {
+    if (
+      /음식|식당|베스킨|배스킨|애슐리|화백|숑숑|김선생|돈까스|돈가스|곰탕|냉면|복집|치킨|카페|커피|베이커|제과|아이스크림/i.test(
+        permit
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isImartRetailRow(row) {
+  if (hasFoodCornerPermit(row)) return false;
+  return venueNameBlobs(row).some((text) => IMART_RETAIL_RE.test(text));
+}
+
+/** 코레일·마트·운산(지명) 등 — 세종 맛집 지도 대상 아님 */
+function isNonRestaurantMapVenue(r) {
+  return staleCheckMembers(r).some((row) => {
+    const name = cleanDisplayField(row.name);
+    if (NON_RESTAURANT_EXACT_NAMES.has(name)) return true;
+    if (venueNameBlobs(row).some((text) => RETAIL_VENDOR_RE.test(text))) return true;
+    if (isImartRetailRow(row)) return true;
+    return false;
+  });
+}
+
+function isExcludedFromMapMarkers(r) {
+  return isLikelyClosedForMap(r) || isNonRestaurantMapVenue(r);
 }
 
 /** 인허가·업추비 상호 (POI 없을 때) */
@@ -494,7 +587,8 @@ function isMapMarkerVenue(r) {
   return (
     resolved.lat != null &&
     resolved.lng != null &&
-    (visitCount(resolved) || 0) >= MIN_MAP_VISITS
+    (visitCount(resolved) || 0) >= MIN_MAP_VISITS &&
+    !isExcludedFromMapMarkers(resolved)
   );
 }
 
@@ -532,9 +626,9 @@ function restaurantsForMapMarkers() {
     .map((r) => resolveVenueCoords(r))
     .filter((r) => r.lat != null && r.lng != null)
     .map((r) => prepareIndividualMarkerItem(r));
-  const deduped = dedupeAndMergeVenues(resolved).filter(
-    (r) => visitCount(r) >= MIN_MAP_VISITS
-  );
+  const deduped = dedupeAndMergeVenues(resolved)
+    .filter((r) => visitCount(r) >= MIN_MAP_VISITS)
+    .filter((r) => !isExcludedFromMapMarkers(r));
 
   return mergeOverlappingMarkerItems(deduped, {
     prepareIndividual: prepareIndividualMarkerItem,
