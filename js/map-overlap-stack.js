@@ -1,6 +1,9 @@
-/** 겹치는 마커만 무지개 1개로 묶음 (30m 이내 단골 밀집) */
+/**
+ * 마커 스택: 지도 핀 겹침만 (~10m). 주소·반경(30m) 기준 전이 묶음은 사용하지 않음.
+ */
 
 export const OVERLAP_RADIUS_M = 30;
+export const OVERLAP_VISUAL_RADIUS_M = 10;
 
 export function haversineDistanceM(a, b) {
   const R = 6371000;
