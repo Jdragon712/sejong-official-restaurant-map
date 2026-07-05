@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260705";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260705";
+} from "./map-kakao.js?v=20260706";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260706";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260705";
+} from "./map-overlap-stack.js?v=20260706";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -339,12 +339,7 @@ function restaurantsForMapMarkers() {
   return mergeOverlappingMarkerItems(deduped, {
     prepareIndividual: prepareIndividualMarkerItem,
     buildStackItem: buildStackMarkerItem,
-    shouldCluster: (a, b) => {
-      if (a._overlapKey && b._overlapKey && a._overlapKey === b._overlapKey) {
-        return haversineDistanceM(a, b) <= OVERLAP_RADIUS_M;
-      }
-      return false;
-    },
+    shouldCluster: (a, b) => haversineDistanceM(a, b) <= OVERLAP_RADIUS_M,
   });
 }
 

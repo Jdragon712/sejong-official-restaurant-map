@@ -7,7 +7,7 @@
     "lat": 36.480098,
     "lng": 127.28923
   },
-  "geocoded_count": 1150,
+  "geocoded_count": 1151,
   "geocode_poi_count": 986,
   "count": 2525,
   "restaurants": [
@@ -35778,8 +35778,11 @@
       "category_app": "일반음식점",
       "phone": "044 -999 -3751",
       "match_status": "exact",
-      "lat": null,
-      "lng": null
+      "lat": 36.4956272428769,
+      "lng": 127.264907568615,
+      "geocode_address": "세종특별자치시 가름로 232",
+      "geocode_provider": "kakao_addr",
+      "geocode_place_name": ""
     },
     {
       "restaurant_id": "venue:9b18fd94623f",

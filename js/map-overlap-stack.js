@@ -1,6 +1,6 @@
-/** 겹치는 마커만 무지개 1개로 묶음 (동일 건물·브랜드 또는 극근접 좌표) */
+/** 겹치는 마커만 무지개 1개로 묶음 (30m 이내 단골 밀집) */
 
-export const OVERLAP_RADIUS_M = 25;
+export const OVERLAP_RADIUS_M = 30;
 
 export function haversineDistanceM(a, b) {
   const R = 6371000;
