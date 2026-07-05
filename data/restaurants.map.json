@@ -6339,8 +6339,12 @@
       "last_visit_date": "2026-04-15",
       "distinct_depts": 2,
       "match_status": "unmatched",
-      "lat": null,
-      "lng": null
+      "lat": 36.4778841515127,
+      "lng": 127.249230456679,
+      "geocode_address": "세종특별자치시 누리1로 83",
+      "geocode_provider": "expense_name_peer",
+      "geocode_linked_from": "나주곰탕 염대감",
+      "geocode_place_name": "나주곰탕염대감"
     },
     {
       "restaurant_id": "venue:aee80446c7e1",
