@@ -1,1 +1,1 @@
-/Users/bagjin-yong/Desktop/헤르메스 비서/부업/맛집앱/web/js/app.js
+repo://Jdragon712/sejong-official-restaurant-map/sha/59a4ad9f4be45d7710f4009c58426aef03435fe5/contents/js/app.js
