@@ -1,7 +1,7 @@
 /** 카카오맵 POI(키워드) 좌표로 마커 위치 보정 */
 
-const POI_CACHE_VERSION = 2;
-const POI_CACHE_KEY = "venue-poi-coords-v2";
+const POI_CACHE_VERSION = 3;
+const POI_CACHE_KEY = "venue-poi-coords-v3";
 const REFINE_DELAY_MS = 110;
 
 function normalizeName(s) {
@@ -145,6 +145,7 @@ export async function refineRestaurantCoords(restaurants, { dataAsOf = "-", onRe
     r.lng = cachedLoc.lng;
     r.geocode_provider = "kakao_kw";
     r.geocode_place_name = cachedLoc.place_name || r.geocode_place_name || "";
+    r.geocode_place_id = cachedLoc.place_id || r.geocode_place_id || "";
     cached += 1;
   });
 
@@ -184,10 +185,12 @@ export async function refineRestaurantCoords(restaurants, { dataAsOf = "-", onRe
         r.lng = lng;
         r.geocode_provider = "kakao_kw";
         r.geocode_place_name = picked.place_name || "";
+        r.geocode_place_id = picked.id || "";
         cache[r.restaurant_id] = {
           lat,
           lng,
           place_name: picked.place_name || "",
+          place_id: picked.id || "",
         };
         refined += 1;
         onRefined?.(r);
