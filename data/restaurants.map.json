@@ -384,7 +384,7 @@
     },
     {
       "restaurant_id": "venue:96fa7aefb9be",
-      "name": "주식회사 란이",
+      "name": "란이",
       "visit_count_total": 90,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-05-14",
@@ -395,8 +395,8 @@
       "category_app": "일반음식점",
       "phone": "044 -868 -1688",
       "match_status": "exact",
-      "lat": 36.51341574548098,
-      "lng": 127.2667775951662,
+      "lat": 36.513443783601,
+      "lng": 127.266812410558,
       "geocode_address": "세종특별자치시 갈매로 564",
       "geocode_provider": "kakao_kw",
       "geocode_place_name": "란이"
@@ -7220,24 +7220,6 @@
       "geocode_place_name": "따봉시래기 세종점"
     },
     {
-      "restaurant_id": "venue:96fa7aefb9be",
-      "name": "란이",
-      "visit_count_total": 8,
-      "visit_rank_bucket": "high",
-      "last_visit_date": "2026-04-22",
-      "distinct_depts": 4,
-      "address_road": "세종특별자치시 조치원읍 이화로 36",
-      "address_jibun": "세종특별자치시 조치원읍 신흥리 166-1 외1필지",
-      "category_app": "일반음식점",
-      "phone": "044 -868 -1688",
-      "match_status": "exact",
-      "lat": 36.513443783601,
-      "lng": 127.266812410558,
-      "geocode_address": "세종특별자치시 갈매로 564",
-      "geocode_provider": "kakao_kw",
-      "geocode_place_name": "란이"
-    },
-    {
       "restaurant_id": "venue:f56d60eac735",
       "name": "룩백",
       "visit_count_total": 8,
@@ -13138,25 +13120,6 @@
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
-    },
-    {
-      "restaurant_id": "venue:96fa7aefb9be",
-      "name": "(주)란이",
-      "visit_count_total": 4,
-      "visit_rank_bucket": "high",
-      "last_visit_date": "2025-03-26",
-      "distinct_depts": 1,
-      "permit_name": "란이",
-      "address_road": "세종특별자치시 조치원읍 이화로 36",
-      "address_jibun": "세종특별자치시 조치원읍 신흥리 166-1 외1필지",
-      "category_app": "일반음식점",
-      "phone": "044 -868 -1688",
-      "match_status": "exact",
-      "lat": 36.513443783601,
-      "lng": 127.266812410558,
-      "geocode_address": "세종특별자치시 갈매로 564",
-      "geocode_provider": "kakao_kw",
-      "geocode_place_name": "란이"
     },
     {
       "restaurant_id": "venue:246cbf3f2225",
