@@ -1,8 +1,9 @@
 {
-  "data_as_of": "2026-05-31",
+  "data_as_of": "2026-06-30",
   "public_file": "restaurants.public.json",
   "record_count": 2525,
   "matched_count": 1659,
   "generated_at": "2026-07-04",
-  "mode": "expense_visits"
+  "mode": "expense_visits",
+  "count": 2524
 }
