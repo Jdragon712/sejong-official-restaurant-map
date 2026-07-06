@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260718";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260718";
+} from "./map-kakao.js?v=20260707i";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260707i";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260718";
+} from "./map-overlap-stack.js?v=20260707i";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -84,6 +84,19 @@ let drawerVenues = [];
 const ENABLE_MARKER_HOVER = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const CORP_TOKEN_RE = /\(주\)([^()（）]+)|㈜([^()（）]+)|주식회사\s*([^\s,()]+)/g;
 
+function setMapView(lat, lng, zoom = 12) {
+  if (!map) return;
+  if (mapProvider === "naver") {
+    const nv = window.naver?.maps;
+    if (nv) {
+      map.setCenter(new nv.LatLng(lat, lng));
+      map.setZoom(zoom);
+    }
+  } else if (map.setView) {
+    map.setView([lat, lng], zoom, { animate: true });
+  }
+}
+
 function setMetaStatus(text) {
   if (text) console.info("[map]", text);
   const toast = document.getElementById("map-toast");
@@ -111,7 +124,13 @@ function resolvePublicUrl(path) {
 }
 
 async function loadMapConfig() {
-  const defaults = { kakaoJsKey: "", preferKakaoMap: true };
+  const defaults = {
+    kakaoJsKey: "",
+    preferKakaoMap: true,
+    // Naver Client ID (use ?ncpKeyId=... for the JS SDK per official docs)
+    naverClientId: "",
+    preferNaverMap: false,
+  };
   try {
     const mod = await import("./config.js");
     return { ...defaults, ...(mod.MAP_CONFIG || {}) };
@@ -143,6 +162,21 @@ function locationKey(r) {
   const geo = cleanDisplayField(r.geocode_address);
   if (geo) return `geo:${geo.replace(/\s+/g, "")}`;
   return `ll:${r.lat.toFixed(5)},${r.lng.toFixed(5)}`;
+}
+
+function normalizeRestaurantName(name) {
+  if (!name) return name;
+  let n = String(name);
+  // For this specific restaurant, Naver indexes it as "삼선미 나주곰탕 세종청사점" (without "소머리국밥")
+  // Strip the descriptive "소머리국밥" part for accurate search and display
+  n = n.replace(/소머리국밥/gi, '').replace(/\s+/g, ' ').trim();
+  // Ensure proper spacing for Naver (e.g. "나주곰탕 소머리국밥" if needed, but for search we prefer shorter)
+  n = n.replace(/나주곰탕소머리국밥/gi, '나주곰탕 소머리국밥');
+  n = n.replace(/([가-힣])(소머리국밥|국밥|곰탕|찜닭|냉면|갈비|만두|치킨|피자)/gi, '$1 $2');
+  n = n.replace(/(나주|삼선미|소머리)(곰탕|국밥)/gi, '$1 $2');
+  // Final cleanup
+  n = n.replace(/\s+/g, ' ').trim();
+  return n;
 }
 
 /** 상호·주소가 같을 때만 묶음 (좌표만 같고 이름이 다르면 별도 마커) */
@@ -306,15 +340,15 @@ function permitBrandName(venue) {
 /** 드로어·팝업 표시명 — 카카오 POI → 괄호 방문처 → 인허가 순 */
 function mapDisplayName(r) {
   const poi = mapPoiLabel(r);
-  if (poi) return poi;
+  if (poi) return normalizeRestaurantName(poi);
   const visitTarget = expenseVisitTarget(r);
   const brand = brandMergeKey(r);
   if (visitTarget && visitTarget !== brand && !brandsAreSimilar(visitTarget, brand)) {
     const raw = cleanDisplayField(r.name);
     const m = raw.match(/[(\（]([^)）]+)[)\）]/);
-    if (m) return m[1].trim();
+    if (m) return normalizeRestaurantName(m[1].trim());
   }
-  return permitBrandName(r);
+  return normalizeRestaurantName(permitBrandName(r));
 }
 
 function brandsAreSimilar(a, b) {
@@ -892,7 +926,7 @@ function extractCoreName(name) {
 function stripBranchSuffix(core) {
   return String(core)
     .replace(
-      /세종시청점|시청점|세종보람점|보람점|세종점|나성점|어진점|정부청사점|청사점|소담점|종촌점|외\d+개소?$/g,
+      /본점|지점|세종시청점|시청점|세종보람점|보람점|세종점|나성점|어진점|정부청사점|청사점|소담점|종촌점|외\d+개소?$/g,
       ""
     )
     .replace(/점$/g, "");
@@ -1083,6 +1117,129 @@ function kakaoMapLinkHtml(r, className) {
   return `<a ${attrs}>카카오맵에서 열기</a>`;
 }
 
+/** Naver Maps search query — 식당 이름 중심으로 검색.
+ * "본점", "지점" 등은 제거해서 Naver에 실제 등록된 이름으로 검색되게 함.
+ * 이름이 모호할 수 있는 경우(짧거나 흔한 키워드)에는 동/도로 힌트를 살짝 붙임.
+ */
+function naverSearchQueryForVenue(r) {
+  // Prefer geocode_place_name (from Kakao POI) as it is often the name Naver also recognizes.
+  let base = cleanDisplayField(r.geocode_place_name);
+  if (!base) {
+    const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || cleanDisplayField(r.name) || "";
+    // Clean name for search: remove English in parentheses to avoid fuzzy matches (e.g. Pastipicio -> 파스타이오)
+    let searchDisplay = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
+    const core = extractCoreName(searchDisplay);
+    base = stripBranchSuffix(core);
+    base = base.replace(/본점|지점|본$/g, "").replace(/\s+/g, " ").trim();
+    if (base.length < 2) base = core.replace(/본점|지점/g, "").trim();
+  }
+
+  if (!base) {
+    const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+    const short = road ? road.split(",")[0].trim() : "";
+    return short ? `세종 ${short}` : "";
+  }
+
+  base = normalizeRestaurantName(base);
+
+  // 이미 세종이나 주요 동이 들어있으면 base 그대로 (e.g. "세종메밀꽃필무렵 본점")
+  const hasLoc = /(세종|노을|나성|도담|아름|종촌|고운|보람|대평|새롬|다정|반곡|소담|해밀|산울|집현)/i.test(base);
+  let q = hasLoc ? base : `세종 ${base}`;
+
+  // 위치 힌트 추출: 실제 세종 동 이름 우선 (한솔동 등). "상가동", "1층" 같은 건물명은 절대 사용하지 않음.
+  const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+  let locHint = "";
+
+  const sejongDongs = ['한솔동','새롬동','나성동','어진동','보람동','도담동','아름동','종촌동','고운동','다정동','반곡동','소담동','해밀동','산울동','집현동'];
+  const badHints = ['상가동', '1층', '2층', '전체호', '1단지', '2단지'];
+
+  // 1. Look inside parentheses first for real dong (e.g. (한솔동, 첫마을1단지))
+  const parenMatch = road.match(/\(([^)]+)\)/);
+  if (parenMatch) {
+    const inside = parenMatch[1];
+    for (const d of sejongDongs) {
+      if (inside.includes(d)) {
+        locHint = d;
+        break;
+      }
+    }
+    // If no dong in paren, try distinctive building like "더센트럴", "첫마을"
+    if (!locHint) {
+      const bMatch = inside.match(/([가-힣]*[트럴|마을|센터|빌딩|아파트][^,\s]*)/);
+      if (bMatch && !badHints.some(b => bMatch[1].includes(b))) {
+        locHint = bMatch[1];
+      }
+    }
+  }
+
+  // 2. Fallback: find any known dong in the whole address
+  if (!locHint) {
+    for (const d of sejongDongs) {
+      if (road.includes(d)) {
+        locHint = d;
+        break;
+      }
+    }
+  }
+
+  // 3. Last resort: road prefix like 노을 (avoid if it leads to bad queries)
+  if (!locHint) {
+    const roadMatch = road.match(/(노을|나성|한솔|새롬|다정|보람|소담|고운|아름|종촌|도담|반곡)[^\s,0-9]*/);
+    if (roadMatch) locHint = roadMatch[0];
+  }
+
+  // Prefer "이름 + 동" or "이름 + distinctive" as user confirmed it works best for Naver.
+  // Only add if it doesn't make the query too long/specific.
+  if (locHint && !hasLoc && !badHints.some(b => locHint.includes(b))) {
+    q = `${base} ${locHint}`;
+  } else if (!hasLoc) {
+    q = `세종 ${base}`;
+  }
+
+  // Final guard: if query still contains too much address junk, fall back to clean name + 세종
+  if ((q.includes("로 ") && q.includes("호")) || q.includes("상가동")) {
+    q = hasLoc ? base : `세종 ${base}`;
+  }
+
+  return q;
+}
+
+function naverMapUrlForVenue(r) {
+  const q = naverSearchQueryForVenue(r);
+  if (q) {
+    return `https://map.naver.com/p/search/${encodeURIComponent(q)}`;
+  }
+  if (r.lat != null && r.lng != null) {
+    const label = mapDisplayName(r) || brandNameFromVenue(r) || r.name;
+    return `https://map.naver.com/p/search/${encodeURIComponent(label)}`;
+  }
+  return "https://map.naver.com/";
+}
+
+function naverMapLinkHtml(r, className) {
+  if (r.lat == null || r.lng == null) return "";
+  const name = normalizeRestaurantName(mapDisplayName(r) || brandNameFromVenue(r));
+  const url = naverMapUrlForVenue(r);
+  const attrs = [
+    `class="${className} naver-map-open"`,
+    `href="${escapeHtml(url)}"`,
+    'target="_blank"',
+    'rel="noopener"',
+    `data-naver-name="${escapeHtml(name)}"`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return `<a ${attrs}>네이버 지도에서 열기</a>`;
+}
+
+function externalMapLinkHtml(r, className) {
+  if (!r || r.lat == null) return "";
+  if (mapProvider === "naver") {
+    return naverMapLinkHtml(r, className);
+  }
+  return kakaoMapLinkHtml(r, className);
+}
+
 function kakaoPlaceSearchOnce(placesService, query) {
   return new Promise((resolve) => {
     placesService.keywordSearch(
@@ -1218,7 +1375,7 @@ function buildPopupHtml(r, { linkedFrom = null } = {}) {
       : `<div class="card-category"><span class="card-license">${escapeHtml(cat.label)}</span></div>`
     : "";
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
-  const link = kakaoMapLinkHtml(r, "card-link");
+  const link = externalMapLinkHtml(r, "card-link");
   return `<div class="map-popup-card">
     <div class="card-head">
       <p class="card-title">${escapeHtml(displayName)}</p>
@@ -1237,9 +1394,17 @@ function fitInitialView() {
     bootstrapKakaoView(kakaoMaps, map, SEJONG_OFFICE_VIEW);
     return;
   }
+  if (mapProvider === "naver" && map) {
+    const nv = window.naver?.maps;
+    if (nv) {
+      map.setCenter(new nv.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng));
+      map.setZoom(LEAFLET_OFFICE_ZOOM);
+    }
+    return;
+  }
   if (map) {
-    map.setView([SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng], LEAFLET_OFFICE_ZOOM);
-    map.invalidateSize();
+    setMapView(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng, LEAFLET_OFFICE_ZOOM);
+    if (map.invalidateSize) map.invalidateSize();
   }
 }
 
@@ -1250,9 +1415,12 @@ function setupMapResize() {
     timer = setTimeout(() => {
       if (mapProvider === "kakao" && map) {
         relayoutKakaoMap(map);
+      } else if (mapProvider === "naver" && map) {
+        // Naver handles resize automatically; nudge center to refresh
+        map.setCenter(map.getCenter());
       } else if (map?.invalidateSize) {
         map.invalidateSize();
-        map.setView([SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng], LEAFLET_OFFICE_ZOOM);
+        setMapView(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng, LEAFLET_OFFICE_ZOOM);
       }
     }, 150);
   });
@@ -1282,6 +1450,77 @@ async function initKakaoMap(jsKey) {
   }
 }
 
+function loadNaverSdk(clientId, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    if (!clientId) {
+      reject(new Error("naverClientId missing"));
+      return;
+    }
+    if (window.naver?.maps?.Map) {
+      resolve(window.naver.maps);
+      return;
+    }
+
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(value);
+    };
+
+    const timer = setTimeout(() => {
+      finish(reject, new Error(`Naver Maps SDK load timeout (${timeoutMs}ms)`));
+    }, timeoutMs);
+
+    const script = document.createElement("script");
+    // Use the new unified NCP format as per official getting started:
+    // https://navermaps.github.io/maps.js.ncp/docs/tutorial-2-Getting-Started.html
+    // New: ?ncpKeyId= (unified for personal/general)
+    // Old ncpClientId / gov / fin are deprecated.
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(clientId)}`;
+    script.async = true;
+    script.onload = () => {
+      if (window.naver?.maps?.Map) {
+        finish(resolve, window.naver.maps);
+      } else {
+        finish(reject, new Error("Naver Maps SDK loaded but naver.maps missing"));
+      }
+    };
+    script.onerror = (e) => {
+      console.error('[Naver] Script load error details:', e);
+      finish(reject, new Error("Naver Maps SDK load failed"));
+    };
+    document.head.appendChild(script);
+
+    // Recommended in official docs for auth failure detection
+    window.navermap_authFailure = function () {
+      console.error('Naver Maps auth failed (navermap_authFailure). Check Client ID and registered Web 서비스 URLs.');
+    };
+  });
+}
+
+async function initNaverMap(clientId) {
+  await waitForWindowReady();
+  await waitForMapContainer("map");
+  const naverMaps = await loadNaverSdk(clientId);
+  mapProvider = "naver";
+  map = new naverMaps.Map("map", {
+    center: new naverMaps.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng),
+    zoom: 12,
+    mapTypeControl: true,
+    mapTypeControlOptions: {
+      position: naverMaps.Position.TOP_RIGHT,
+    },
+    zoomControl: true,
+    zoomControlOptions: {
+      position: naverMaps.Position.RIGHT_CENTER,
+      style: naverMaps.ZoomControlStyle.SMALL,
+    },
+    scaleControl: true,
+  });
+}
+
 function closeOpenPopups() {
   if (mapProvider === "kakao") {
     closeKakaoInfos(markers);
@@ -1293,6 +1532,10 @@ function clearMarkers() {
     closeKakaoInfos(markers);
     markers.forEach((m) => {
       m.overlay.setMap(null);
+    });
+  } else if (mapProvider === "naver" && map) {
+    markers.forEach((m) => {
+      if (m.setMap) m.setMap(null);
     });
   } else if (map) {
     markers.forEach((m) => map.removeLayer(m));
@@ -1317,7 +1560,7 @@ function buildInlineDetailHtml(r, { linkedFrom = null } = {}) {
       : `<p class="panel-line"><span class="panel-label">업종</span>${escapeHtml(cat.label)}</p>`
     : "";
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
-  const link = kakaoMapLinkHtml(r, "panel-link");
+  const link = externalMapLinkHtml(r, "panel-link");
   return `<div class="venue-inline-detail">
     <div class="venue-detail-badges">${tierBadge}${visitBadge}</div>
     ${categoryLine}
@@ -1373,7 +1616,16 @@ function highlightMarkerForItem(item) {
     .querySelectorAll(".map-marker.active")
     .forEach((el) => el.classList.remove("active"));
   const m = item ? findMapMarker(item) : null;
-  m?.pin?.classList.add("active");
+  if (m?.pin) {
+    m.pin.classList.add("active");
+    return;
+  }
+  // Naver custom HTML markers: locate via data-rid we injected on .map-pin-wrap
+  if (mapProvider === "naver" && m && m._rid != null) {
+    const rid = String(m._rid).replace(/"/g, "");
+    const pin = document.querySelector(`.map-pin-wrap[data-rid="${rid}"] .map-marker`);
+    if (pin) pin.classList.add("active");
+  }
 }
 
 function centerMapOnItem(item) {
@@ -1384,10 +1636,16 @@ function centerMapOnItem(item) {
     centerMapOn(map, kakaoMaps, lat, lng);
     return;
   }
+  if (mapProvider === "naver" && map) {
+    const nv = window.naver?.maps;
+    if (nv) {
+      map.setCenter(new nv.LatLng(lat, lng));
+      map.setZoom(Math.max(map.getZoom() || 12, 15));
+    }
+    return;
+  }
   if (map?.setView) {
-    map.setView([lat, lng], Math.max(map.getZoom?.() || LEAFLET_OFFICE_ZOOM, 15), {
-      animate: true,
-    });
+    setMapView(lat, lng, Math.max(map.getZoom?.() || LEAFLET_OFFICE_ZOOM, 15));
   }
 }
 
@@ -1428,7 +1686,7 @@ function renderDrawerList(venues, expandRowKey = activeId) {
     const rowKey = venue._listKey || listRowKey(venue);
     const info = getVisitRankInfo(venue);
     const tier = info?.tier ?? 5;
-    const name = venue._displayName || mapDisplayName(venue);
+    const name = normalizeRestaurantName(venue._displayName || mapDisplayName(venue));
     const li = document.createElement("li");
     li.className = "venue-drawer-row";
     const expanded = rowKey === expandRowKey;
@@ -1581,7 +1839,58 @@ async function addMarkers() {
     return;
   }
 
+  if (mapProvider === "naver") {
+    addNaverMarkers(markerItems);
+    return;
+  }
+
   addLeafletMarkers(markerItems);
+}
+
+function addNaverMarkers(items) {
+  if (!map || !window.naver?.maps) return;
+
+  const naverMaps = window.naver.maps;
+
+  items.forEach((r) => {
+    if (r.lat == null || r.lng == null) return;
+
+    const style = getMarkerStyle(r);
+    let pinHtml = dropletPinHtml(style);
+    // Inject data-rid so highlight can find the exact .map-marker for Naver custom HTML icons
+    const ridForData = String(r.restaurant_id || "").replace(/"/g, "");
+    pinHtml = pinHtml.replace(
+      /class="map-pin-wrap([^"]*)"/,
+      (match, extraClasses) => `class="map-pin-wrap${extraClasses}" data-rid="${ridForData}"`
+    );
+
+    const marker = new naverMaps.Marker({
+      position: new naverMaps.LatLng(r.lat, r.lng),
+      map: map,
+      title: r.name || "",
+      icon: {
+        content: pinHtml,
+        anchor: new naverMaps.Point(16, 38),
+      },
+    });
+
+    // attach for findMapMarker, stacks etc. (to make clicks and drawer work like Kakao)
+    marker._rid = r.restaurant_id;
+    marker._listKey = r._listKey;
+    if (r._stackMembers && r._stackMembers.length) {
+      marker._stackRids = r._stackMembers.map((row) => row.restaurant_id);
+      marker._stackMembers = r._stackMembers;
+    }
+    marker.lat = r.lat;
+    marker.lng = r.lng;
+    // .pin kept null for Naver (we use data-rid query in highlight for active state)
+
+    markers.push(marker);
+
+    naverMaps.Event.addListener(marker, "click", () => {
+      openMarkerDrawer(r);
+    });
+  });
 }
 
 async function refineAndSyncMarkerCoords(dataAsOf) {
@@ -1601,6 +1910,8 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+
 
 function listRowKey(r) {
   if (r._clusterKey) return `loc:${r._clusterKey}`;
@@ -1721,10 +2032,21 @@ function openMapPopupFor(target, linkedFrom) {
     });
     return;
   }
-  map.setView([target.lat, target.lng], 16, { animate: true });
-  const m = findMapMarker(target);
-  if (m) {
-    m.bindPopup(buildPopupHtml(popupVenue, { linkedFrom })).openPopup();
+  if (mapProvider === "naver" && map) {
+    const nv = window.naver?.maps;
+    if (nv) {
+      map.setCenter(new nv.LatLng(target.lat, target.lng));
+      map.setZoom(16);
+    }
+    // Use custom drawer for consistency with our designed UI (same as Kakao version)
+    openMarkerDrawer(popupVenue);
+    return;
+  } else if (map?.setView) {
+    setMapView(target.lat, target.lng, 16);
+    const m = findMapMarker(target);
+    if (m) {
+      m.bindPopup(buildPopupHtml(popupVenue, { linkedFrom })).openPopup();
+    }
   }
 }
 
@@ -1783,7 +2105,9 @@ function renderMapLegend() {
 }
 
 function mapProviderLabel() {
-  return mapProvider === "kakao" ? "카카오맵" : "OSM";
+  if (mapProvider === "kakao") return "카카오맵";
+  if (mapProvider === "naver") return "네이버맵";
+  return "OSM (fallback)";
 }
 
 function renderSources(asOf) {
@@ -1836,7 +2160,19 @@ async function main() {
     const asOf = manifest.data_as_of || mapData.data_as_of || "-";
     renderSources(asOf);
 
-    if (mapConfig.preferKakaoMap && mapConfig.kakaoJsKey) {
+    // Naver Maps 우선 (use ncpKeyId for the JS SDK)
+    if (mapConfig.preferNaverMap && mapConfig.naverClientId) {
+      try {
+        console.log("[Naver] Trying to load with ncpKeyId:", mapConfig.naverClientId);
+        setMetaStatus("네이버맵 연결 중…");
+        await initNaverMap(mapConfig.naverClientId);
+        console.log("[Naver] Map initialized successfully. Provider:", mapProvider);
+      } catch (err) {
+        console.error("[Naver] Load failed:", err);
+        showMapToast("네이버맵 로드 실패. Naver Cloud 콘솔에서 ncpKeyId용 도메인 등록 확인 (http://localhost:5173 등 정확히).", 12000);
+        // Do not fallback to Leaflet to keep Naver as primary
+      }
+    } else if (mapConfig.preferKakaoMap && mapConfig.kakaoJsKey) {
       try {
         setMetaStatus("카카오맵 연결 중…");
         await initKakaoMap(mapConfig.kakaoJsKey);
@@ -1853,7 +2189,9 @@ async function main() {
     }
 
     await addMarkers();
-    fitInitialView();
+    if (map) {
+      fitInitialView();
+    }
     refineAndSyncMarkerCoords(asOf).catch((err) => {
       console.warn("POI coord refine skipped:", err);
     });
