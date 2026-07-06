@@ -1,13 +1,13 @@
 {
   "mode": "expense_visits",
-  "data_as_of": "2026-05-31",
+  "data_as_of": "2026-06-30",
   "window_from": "2025-01-01",
   "window_months": null,
   "visit_count_field": "visit_count_total",
   "source_summary": "세종·중앙부처·공공기관 등 공개 업무추진비 + 세종 인허가 주소 매칭",
   "visit_counts_available": true,
-  "matched_count": 1659,
-  "unmatched_count": 866,
+  "matched_count": 1638,
+  "unmatched_count": 887,
   "agency_count": 10,
   "by_agency": {
     "공정거래위원회": 14037,
@@ -570,17 +570,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:ddf0fac0b6aa",
+      "restaurant_id": "venue:80681184829b",
       "name": "본우리집밥 국토교통부점",
       "visit_count_total": 59,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-02-04",
       "distinct_depts": 3,
-      "permit_name": "본우리집밥 카페일마지오 문체부점",
-      "address_road": "세종특별자치시 갈매로 388, 15동 1층 (어진동, 정부세종청사(문화체육관광부))",
-      "address_jibun": "세종특별자치시 어진동 3-187 정부세종청사1층(문화체육관광부) 15동",
-      "category_app": "휴게음식점",
-      "match_status": "contains"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:d5d00996eaa6",
@@ -1371,16 +1367,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:008bb7300939",
+      "restaurant_id": "venue:1db025cb811a",
       "name": "구이구이",
       "visit_count_total": 29,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-05-13",
       "distinct_depts": 10,
-      "address_road": "세종특별자치시 노을3로 100, 1층 104호 (한솔동, 한솔프라자)",
-      "address_jibun": "세종특별자치시 한솔동 928",
-      "category_app": "일반음식점",
-      "match_status": "exact"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:0081036be107",
@@ -3368,17 +3361,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:ddf0fac0b6aa",
+      "restaurant_id": "venue:e2c6bbf4cfa3",
       "name": "본우리집밥 공정거래위원회점",
       "visit_count_total": 13,
       "visit_rank_bucket": "high",
       "last_visit_date": "2025-10-24",
       "distinct_depts": 1,
-      "permit_name": "본우리집밥 카페일마지오 문체부점",
-      "address_road": "세종특별자치시 갈매로 388, 15동 1층 (어진동, 정부세종청사(문화체육관광부))",
-      "address_jibun": "세종특별자치시 어진동 3-187 정부세종청사1층(문화체육관광부) 15동",
-      "category_app": "휴게음식점",
-      "match_status": "contains"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:c96c84a1f275",
@@ -6399,17 +6388,13 @@
       "match_status": "unmatched"
     },
     {
-      "restaurant_id": "venue:ce9dc9a9939c",
+      "restaurant_id": "venue:2755050a5952",
       "name": "할리스AK&세종점",
       "visit_count_total": 7,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-03-12",
       "distinct_depts": 2,
-      "permit_name": "할리스AKand세종점",
-      "address_road": "세종 한누리대로 411 KT&G세종타워 A 112,210호 (어진동)",
-      "category_app": "휴게음식점/커피/음료전문점",
-      "phone": "044)960-5377",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:521d7f8de4dc",
@@ -6522,18 +6507,13 @@
       "match_status": "unmatched"
     },
     {
-      "restaurant_id": "venue:0da65e3a21d5",
+      "restaurant_id": "venue:5833812382a3",
       "name": "굴천지",
       "visit_count_total": 6,
       "visit_rank_bucket": "high",
       "last_visit_date": "2025-12-19",
       "distinct_depts": 2,
-      "permit_name": "굴천지&초계국수",
-      "address_road": "세종특별자치시 시청대로 219, 5층 502호 (보람동, 시드니하트)",
-      "address_jibun": "세종특별자치시 보람동 616-2",
-      "category_app": "일반음식점",
-      "phone": "044 -866 -7599",
-      "match_status": "contains"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:dfa94d9668c2",
@@ -6841,17 +6821,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:afe8474cbd08",
+      "restaurant_id": "venue:9e45de30c96d",
       "name": "바다를 먹은 고등어 세종점",
       "visit_count_total": 6,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-04-14",
       "distinct_depts": 2,
-      "permit_name": "바다",
-      "address_road": "세종특별자치시 도움8로 11-11, 어진프라자 1층 104호 (어진동)",
-      "address_jibun": "세종특별자치시 어진동 551 어진프라자",
-      "category_app": "휴게음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:e2c981e2e1c8",
@@ -7359,17 +7335,13 @@
       "match_status": "unmatched"
     },
     {
-      "restaurant_id": "venue:d7fb6e774c01",
+      "restaurant_id": "venue:1913dd978640",
       "name": "주식회사 섭생브라더스_섭생정식",
       "visit_count_total": 6,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-03-04",
       "distinct_depts": 1,
-      "permit_name": "섭생정식",
-      "address_road": "세종 조치원읍 문화4길 1 (침산리)",
-      "category_app": "일반음식점/한식",
-      "phone": "044)868-8677",
-      "match_status": "contains"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:a8a9d1b742f8",
@@ -14208,17 +14180,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:afe8474cbd08",
+      "restaurant_id": "venue:e2f8792699fb",
       "name": "바다를 먹은 고등어",
       "visit_count_total": 3,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-05-15",
       "distinct_depts": 1,
-      "permit_name": "바다",
-      "address_road": "세종특별자치시 도움8로 11-11, 어진프라자 1층 104호 (어진동)",
-      "address_jibun": "세종특별자치시 어진동 551 어진프라자",
-      "category_app": "휴게음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:5ba5c290db17",
@@ -14503,17 +14471,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:9fafd3abd603",
+      "restaurant_id": "venue:f63c7902fd95",
       "name": "소담정",
       "visit_count_total": 3,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-05-28",
       "distinct_depts": 1,
-      "permit_name": "소담",
-      "address_road": "세종특별자치시 시청대로 219, 5층 509호 (보람동, 시드니하트)",
-      "address_jibun": "세종특별자치시 보람동 616-2",
-      "category_app": "휴게음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:0cb3bf65e013",
@@ -14716,18 +14680,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:6a3f0f477e16",
+      "restaurant_id": "venue:20e51c31526e",
       "name": "영순이칼국수",
       "visit_count_total": 3,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-05-19",
       "distinct_depts": 1,
-      "permit_name": "영순이 바지락 칼국수",
-      "address_road": "세종특별자치시 한누리대로 2143, 금강시티타워 2층 201호 (보람동)",
-      "address_jibun": "세종특별자치시 보람동 742 금강시티타워",
-      "category_app": "일반음식점",
-      "phone": "044 -865 -9141",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:4fce1ead14c6",
@@ -16016,17 +15975,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:7bdc337a6fd5",
+      "restaurant_id": "venue:4f57db6405f9",
       "name": "고등어한상",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-04-16",
       "distinct_depts": 1,
-      "permit_name": "고등어밥상(고밥상)",
-      "address_road": "세종특별자치시 장군면 월현윗길 38-7, 1층",
-      "address_jibun": "세종특별자치시 장군면 봉안리 216-6",
-      "category_app": "일반음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:a3d92a393665",
@@ -16317,12 +16272,7 @@
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-02-06",
       "distinct_depts": 1,
-      "match_status": "unmatched",
-      "lat": 36.478511319151,
-      "lng": 127.287328280833,
-      "geocode_address": "세종특별자치시 한누리대로 2150",
-      "geocode_provider": "expense_name_peer",
-      "geocode_linked_from": "저림숙성그릴"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:146c83141546",
@@ -16454,18 +16404,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:0da65e3a21d5",
+      "restaurant_id": "venue:918b7ceba6f0",
       "name": "굴천지, 스텔라온커피",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2025-12-05",
       "distinct_depts": 1,
-      "permit_name": "굴천지&초계국수",
-      "address_road": "세종특별자치시 시청대로 219, 5층 502호 (보람동, 시드니하트)",
-      "address_jibun": "세종특별자치시 보람동 616-2",
-      "category_app": "일반음식점",
-      "phone": "044 -866 -7599",
-      "match_status": "contains"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:7409369fd30a",
@@ -16702,17 +16647,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:bc59d55a9279",
+      "restaurant_id": "venue:992d96f2e630",
       "name": "김밥천국",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2025-12-18",
       "distinct_depts": 1,
-      "permit_name": "김밥천국 세종점",
-      "address_road": "세종특별자치시 한누리대로 193, 제1동 1층 115호 (나성동, 참미르빌딩 주건축물)",
-      "address_jibun": "세종특별자치시 나성동 176 참미르빌딩 주건축물 제 1동 115호",
-      "category_app": "휴게음식점",
-      "match_status": "exact"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:ea1a7a092e0a",
@@ -16914,7 +16855,7 @@
       "address_road": "세종특별자치시 새롬중앙로 62-15, 해피라움W 1층 107호 (새롬동)",
       "address_jibun": "세종특별자치시 새롬동 579 해피라움W",
       "category_app": "휴게음식점",
-      "match_status": "contains"
+      "match_status": "corp_in_permit"
     },
     {
       "restaurant_id": "venue:bc47fa959c29",
@@ -18112,18 +18053,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:ff793d23e9d3",
+      "restaurant_id": "venue:3065fc9191f2",
       "name": "마루심㈜",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-01-21",
       "distinct_depts": 1,
-      "permit_name": "마루",
-      "address_road": "세종특별자치시 국세청로 45, 상가동 1층 A121호 (나성동, 나릿재마을3단지)",
-      "address_jibun": "세종특별자치시 나성동 833 나릿재마을3단지",
-      "category_app": "일반음식점",
-      "phone": "042- 824-0030",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:19f83a39b653",
@@ -18404,7 +18340,7 @@
       "address_jibun": "세종특별자치시 소담동 524 법조타운A",
       "category_app": "일반음식점",
       "phone": "044 - 865-6555",
-      "match_status": "contains"
+      "match_status": "corp_in_permit"
     },
     {
       "restaurant_id": "venue:d383edeb8e12",
@@ -20101,18 +20037,13 @@
       "match_status": "unmatched"
     },
     {
-      "restaurant_id": "venue:3848195e2c0c",
+      "restaurant_id": "venue:fb78b640209b",
       "name": "서울청사 식당",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-03-27",
       "distinct_depts": 1,
-      "permit_name": "서울식당",
-      "address_road": "세종특별자치시 부강면 부촌길 48",
-      "address_jibun": "세종특별자치시 부강면 부강리 443-4",
-      "category_app": "일반음식점",
-      "phone": "044 -275 -4304",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:8712af3eebdb",
@@ -25189,17 +25120,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:a9df20e2d5d1",
+      "restaurant_id": "venue:1f217bd3fb81",
       "name": "탄방골차순대",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-02-03",
       "distinct_depts": 1,
-      "permit_name": "탄방골 참순대",
-      "address_road": "세종특별자치시 마음안1로 155, 주건축물제1동 2층 201,202호 (고운동, 성진프라자)",
-      "address_jibun": "세종특별자치시 고운동 1369",
-      "category_app": "일반음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:a9df20e2d5d1",
@@ -25294,18 +25221,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:34a1fc3d749e",
+      "restaurant_id": "venue:a686d4d42a97",
       "name": "토바우",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-02-04",
       "distinct_depts": 1,
-      "permit_name": "주식회사 토바우안심한우마을",
-      "address_road": "세종특별자치시 장군면 월현윗길 173-12, 2,3층",
-      "address_jibun": "세종특별자치시 장군면 도계리 201-42",
-      "category_app": "일반음식점",
-      "phone": "044 -866 -0092",
-      "match_status": "contains"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:95494a018b5a",
@@ -26276,17 +26198,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:e82c6cf36063",
+      "restaurant_id": "venue:65b69c13b8c8",
       "name": "햇님과달림",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-02-02",
       "distinct_depts": 1,
-      "permit_name": "햇님과 달님",
-      "address_road": "세종특별자치시 연서면 도신고복로 599, 2층",
-      "address_jibun": "세종특별자치시 연서면 용암리 184-2",
-      "category_app": "일반음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:ac1542dab3de",
@@ -26303,18 +26221,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:ac1542dab3de",
+      "restaurant_id": "venue:9b779fc8c5ad",
       "name": "행복부지개",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2026-02-05",
       "distinct_depts": 1,
-      "permit_name": "행복무지개",
-      "address_road": "세종특별자치시 조치원읍 죽림로 27, 1층",
-      "address_jibun": "세종특별자치시 조치원읍 죽림리 100-2",
-      "category_app": "일반음식점",
-      "phone": "044 -863 -1700",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:97ed1e537f26",
@@ -26397,17 +26310,13 @@
       "match_status": "unmatched"
     },
     {
-      "restaurant_id": "venue:e6315758372a",
+      "restaurant_id": "venue:97cb409f6ddf",
       "name": "형제상회",
       "visit_count_total": 2,
       "visit_rank_bucket": "medium",
       "last_visit_date": "2025-12-15",
       "distinct_depts": 1,
-      "permit_name": "형제고기상회",
-      "address_road": "세종특별자치시 나성북1로 23, 1층 138호 (나성동, 나릿재마을 5단지)",
-      "address_jibun": "세종특별자치시 나성동 827 나릿재마을 5단지",
-      "category_app": "일반음식점",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:7fa3613ab0b6",
@@ -28214,12 +28123,7 @@
       "address_road": "세종특별자치시 나성로 133-15, 애플타워 1층 110호 (나성동)",
       "address_jibun": "세종특별자치시 나성동 791 애플타워",
       "category_app": "일반음식점",
-      "match_status": "exact",
-      "lat": 36.478511319151,
-      "lng": 127.287328280833,
-      "geocode_address": "세종특별자치시 한누리대로 2150",
-      "geocode_provider": "expense_name_peer",
-      "geocode_linked_from": "저림숙성그릴"
+      "match_status": "exact"
     },
     {
       "restaurant_id": "venue:9d41cbbf3bb2",
@@ -29059,18 +28963,13 @@
       "match_status": "exact"
     },
     {
-      "restaurant_id": "venue:fc319a4244b7",
+      "restaurant_id": "venue:0ac4480fec47",
       "name": "한옥집",
       "visit_count_total": 1,
       "visit_rank_bucket": "low",
       "last_visit_date": "2026-03-12",
       "distinct_depts": 1,
-      "permit_name": "한옥",
-      "address_road": "세종특별자치시 부강면 청연로 37 (1층)",
-      "address_jibun": "세종특별자치시 부강면 부강리 128 1층",
-      "category_app": "일반음식점",
-      "phone": "044 -275 -2898",
-      "match_status": "fuzzy"
+      "match_status": "unmatched"
     },
     {
       "restaurant_id": "venue:26bc7eb62b70",
