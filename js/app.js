@@ -1168,14 +1168,21 @@ function naverSearchQueryForVenue(r) {
 
   base = normalizeRestaurantName(base);
 
-  // 이름 중심 + 세종 bias (사용자 요청: 이름으로 정확히 떠야 예약 등 이용 가능)
-  let q = /세종/i.test(base) ? base : `세종 ${base}`;
+  // 숫자 prefix 브랜드 (1980황가원 등) 는 숫자 뗀 이름도 시도할 수 있게 base 정리
+  let searchBase = base;
+  const numPrefixMatch = base.match(/^\d+\s*(.+)$/);
+  if (numPrefixMatch) {
+    searchBase = numPrefixMatch[1]; // "황가원"
+  }
 
-  // 조치원/금남 등 주변 지역은 이름 + "조치원" 힌트 추가 (이름은 유지)
+  // 이름 중심 + 세종 bias
+  let q = /세종/i.test(searchBase) ? searchBase : `세종 ${searchBase}`;
+
+  // 조치원 지역 보조 힌트 (이름 유지)
   const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const isJochiwonArea = /조치원|금남|침천|용포/.test(road);
-  if (isJochiwonArea && base.length <= 6 && !q.includes('조치원')) {
-    q = `${base} 조치원`;
+  if (isJochiwonArea && searchBase.length <= 6 && !q.includes('조치원')) {
+    q = `${searchBase} 조치원`;
   }
 
   return q;
