@@ -1226,18 +1226,26 @@ function naverMapLinkHtml(r, className) {
   return `<a ${attrs}>네이버 지도에서 열기</a>`;
 }
 
+function copyAddressLinkHtml(r) {
+  const cleanAddr = getCleanRoadAddress(r);
+  if (!cleanAddr) return "";
+  return `<span class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사 (층/호 제외)" style="cursor:pointer; color:#0066cc; font-size:0.85em; margin-left:4px;">주소복사</span>`;
+}
+
 function externalMapLinkHtml(r, className) {
   if (!r || r.lat == null) return "";
   const kakaoLink = kakaoMapLinkHtml(r, className);
+  const copyLink = copyAddressLinkHtml(r);
+  const kakaoWithCopy = kakaoLink ? (kakaoLink + (copyLink ? copyLink : '')) : '';
   if (mapProvider === "naver") {
     const naverLink = naverMapLinkHtml(r, className);
     // 네이버 링크가 있어도 Kakao를 항상 보조로 제공 (은주식당처럼 네이버에 없는 경우 대비)
-    if (naverLink && kakaoLink) {
-      return `${naverLink} · ${kakaoLink}`;
+    if (naverLink && kakaoWithCopy) {
+      return `${naverLink} · ${kakaoWithCopy}`;
     }
-    return naverLink || kakaoLink;
+    return naverLink || kakaoWithCopy;
   }
-  return kakaoLink;
+  return kakaoWithCopy;
 }
 
 function kakaoPlaceSearchOnce(placesService, query) {
@@ -1397,12 +1405,7 @@ function buildPopupHtml(r, { linkedFrom = null } = {}) {
     : "";
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const link = externalMapLinkHtml(r, "card-link");
-  const cleanAddr = getCleanRoadAddress(r);
-  let addrHtml = addr ? `<p class="card-addr">${escapeHtml(addr)}` : "";
-  if (addr && cleanAddr) {
-    addrHtml += ` <span class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사 (층/호 제외)" style="cursor:pointer; color:#0066cc; font-size:0.8em;">복사</span>`;
-  }
-  if (addr) addrHtml += `</p>`;
+  let addrHtml = addr ? `<p class="card-addr">${escapeHtml(addr)}</p>` : "";
   return `<div class="map-popup-card">
     <div class="card-head">
       <p class="card-title">${escapeHtml(displayName)}</p>
@@ -1617,12 +1620,7 @@ function buildInlineDetailHtml(r, { linkedFrom = null } = {}) {
     : "";
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const link = externalMapLinkHtml(r, "panel-link");
-  const cleanAddr = getCleanRoadAddress(r);
-  let addrHtml = addr ? `<p class="panel-line"><span class="panel-label">주소</span>${escapeHtml(addr)}` : "";
-  if (addr && cleanAddr) {
-    addrHtml += ` <span class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사" style="cursor:pointer; color:#0066cc; font-size:0.85em;">복사</span>`;
-  }
-  if (addr) addrHtml += `</p>`;
+  let addrHtml = addr ? `<p class="panel-line"><span class="panel-label">주소</span>${escapeHtml(addr)}</p>` : "";
   return `<div class="venue-inline-detail">
     <div class="venue-detail-badges">${tierBadge}${visitBadge}</div>
     ${categoryLine}
