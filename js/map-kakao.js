@@ -74,8 +74,9 @@ export function waitForMapContainer(containerId = "map", timeoutMs = 10000) {
     const start = Date.now();
     const tick = () => {
       const el = document.getElementById(containerId);
-      if (el && el.offsetWidth >= 240 && el.offsetHeight >= 300) {
-        resolve(el);
+      if (el && el.offsetWidth >= 300 && el.offsetHeight >= 400) {
+        // one more frame to let flex/grid settle
+        requestAnimationFrame(() => resolve(el));
         return;
       }
       if (Date.now() - start > timeoutMs) {
