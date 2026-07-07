@@ -1305,7 +1305,7 @@
       "lng": 127.262446690216,
       "geocode_address": "세종특별자치시 절재로 194",
       "geocode_provider": "kakao_kw",
-      "geocode_place_name": "1980황가원"
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:5bda93ed1872",
@@ -1613,7 +1613,7 @@
       "lng": 127.262446690216,
       "geocode_address": "세종특별자치시 절재로 194",
       "geocode_provider": "kakao_kw",
-      "geocode_place_name": "1980황가원"
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:81dc2ef1e2d8",
@@ -5448,7 +5448,7 @@
       "lng": 127.262446690216,
       "geocode_address": "세종특별자치시 절재로 194",
       "geocode_provider": "kakao_kw",
-      "geocode_place_name": "1980황가원"
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:4917cc7caebb",
@@ -28629,7 +28629,7 @@
       "lng": 127.262446690216,
       "geocode_address": "세종특별자치시 절재로 194",
       "geocode_provider": "kakao_kw",
-      "geocode_place_name": "1980황가원"
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:33f2eb0c0c18",
