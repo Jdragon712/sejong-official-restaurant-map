@@ -179,8 +179,11 @@ function markerColor(style = {}) {
 
 export function dropletPinHtml(style = {}) {
   if (style.isStack) {
-    return `<div class="map-pin-wrap map-pin-stack tier-rainbow">
+    const count = style.count || '';
+    const countBadge = count > 1 ? `<span class="stack-count">${count}</span>` : '';
+    return `<div class="map-pin-wrap map-pin-stack tier-rainbow" data-count="${count}">
       <span class="map-marker"><span class="droplet-body droplet-rainbow"><span class="droplet-shine"></span></span></span>
+      ${countBadge}
     </div>`;
   }
   const { tier = 5 } = style;
@@ -190,10 +193,11 @@ export function dropletPinHtml(style = {}) {
 }
 
 function createStackPinElement(style = {}) {
-  const { zIndex = 8 } = style;
+  const { zIndex = 8, count = '' } = style;
   const wrap = document.createElement("div");
   wrap.className = "map-pin-wrap map-pin-stack tier-rainbow";
   wrap.style.zIndex = String(zIndex);
+  if (count) wrap.dataset.count = count;
 
   const marker = document.createElement("span");
   marker.className = "map-marker";
@@ -204,6 +208,14 @@ function createStackPinElement(style = {}) {
   body.appendChild(shine);
   marker.appendChild(body);
   wrap.appendChild(marker);
+
+  if (count > 1) {
+    const badge = document.createElement("span");
+    badge.className = "stack-count";
+    badge.textContent = count;
+    wrap.appendChild(badge);
+  }
+
   return { wrap, pin: marker };
 }
 
