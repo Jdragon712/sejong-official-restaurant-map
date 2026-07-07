@@ -1085,24 +1085,21 @@ body {
   background: var(--surface-solid);
 }
 
-/* Naver Maps controls positioning - separate map type (일반/위성) and zoom */
-#map > div > div[style*="position: absolute"] {
-  /* reset broad */
-}
-
-#map > div > div[style*="position: absolute"][style*="right"] {
-  right: 8px !important;
-}
-
+/* Naver Maps controls positioning - keep map type (일반/위성) and zoom separate on mobile */
 @media (max-width: 768px) {
-  /* Zoom control to lower bottom right on mobile */
+  /* Map type buttons (containing 일반 or 위성) - top left */
+  #map > div > div[style*="position: absolute"] {
+    /* generic, overridden below */
+  }
+
+  /* Target by position for zoom (usually right side) */
   #map > div > div[style*="position: absolute"][style*="right"] {
-    bottom: 70px !important;  /* lower to give space from bottom UI */
+    bottom: 80px !important;
     top: auto !important;
     right: 8px !important;
   }
 
-  /* Map type control (일반/위성) to top left on mobile to avoid overlap with zoom */
+  /* If map type ends up right, force it left */
   #map > div > div[style*="position: absolute"][style*="top"][style*="right"] {
     top: 8px !important;
     left: 8px !important;
