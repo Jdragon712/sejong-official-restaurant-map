@@ -1514,11 +1514,40 @@ async function initNaverMap(clientId) {
     },
     zoomControl: true,
     zoomControlOptions: {
-      position: naverMaps.Position.RIGHT_CENTER,
+      position: naverMaps.Position.RIGHT_BOTTOM,
       style: naverMaps.ZoomControlStyle.SMALL,
     },
     scaleControl: true,
   });
+
+  // Mobile-friendly zoom control positioning: move to bottom-right, a bit lower
+  // to avoid overlap with category pills, Naver badge, drawer, or attribution.
+  setTimeout(() => {
+    try {
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
+      const controls = mapEl.querySelectorAll(':scope > div');
+      controls.forEach((ctrl) => {
+        const style = ctrl.getAttribute('style') || '';
+        if (style.includes('position: absolute') && style.includes('right:')) {
+          if (window.innerWidth <= 768) {
+            const h = ctrl.offsetHeight || 0;
+            if (h > 35) {
+              // Zoom control (taller) - lower it a bit
+              ctrl.style.bottom = '58px';
+              ctrl.style.top = 'auto';
+              ctrl.style.right = '8px';
+            } else {
+              // Scale / small controls - keep very bottom
+              ctrl.style.bottom = '8px';
+              ctrl.style.top = 'auto';
+              ctrl.style.right = '8px';
+            }
+          }
+        }
+      });
+    } catch (e) {}
+  }, 350);
 }
 
 function closeOpenPopups() {
