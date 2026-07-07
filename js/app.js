@@ -1236,7 +1236,12 @@ function externalMapLinkHtml(r, className) {
   if (!r || r.lat == null) return "";
   const kakaoLink = kakaoMapLinkHtml(r, className);
   const copyLink = copyAddressLinkHtml(r);
-  const kakaoWithCopy = kakaoLink ? (kakaoLink + (copyLink ? copyLink : '')) : '';
+  let kakaoWithCopy = kakaoLink || '';
+  if (kakaoLink && copyLink) {
+    kakaoWithCopy = `${kakaoLink} · ${copyLink}`;
+  } else if (copyLink) {
+    kakaoWithCopy = copyLink;
+  }
   if (mapProvider === "naver") {
     const naverLink = naverMapLinkHtml(r, className);
     // 네이버 링크가 있어도 Kakao를 항상 보조로 제공 (은주식당처럼 네이버에 없는 경우 대비)
