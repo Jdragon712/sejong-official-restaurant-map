@@ -3,7 +3,7 @@
  */
 
 export const OVERLAP_RADIUS_M = 30;
-export const OVERLAP_VISUAL_RADIUS_M = 40; // further increased for mobile visual overlap prevention (icons ~20-30px take space)
+export const OVERLAP_VISUAL_RADIUS_M = 15; // restored closer to original; marker visual stacking not the reported issue
 
 export function haversineDistanceM(a, b) {
   const R = 6371000;
