@@ -1164,12 +1164,20 @@ function naverSearchQueryForVenue(r) {
 
 function naverMapUrlForVenue(r) {
   const q = naverSearchQueryForVenue(r);
+  const hasCoord = r.lat != null && r.lng != null;
+
   if (q) {
-    return `https://map.naver.com/p/search/${encodeURIComponent(q)}`;
+    let url = `https://map.naver.com/p/search/${encodeURIComponent(q)}`;
+    if (hasCoord) {
+      // 좌표 bias를 주면 이름이 약간 달라도 해당 위치 근처 결과 우선
+      url += `?x=${r.lng}&y=${r.lat}`;
+    }
+    return url;
   }
-  if (r.lat != null && r.lng != null) {
+
+  if (hasCoord) {
     const label = mapDisplayName(r) || brandNameFromVenue(r) || r.name;
-    return `https://map.naver.com/p/search/${encodeURIComponent(label)}`;
+    return `https://map.naver.com/p/search/${encodeURIComponent(label)}?x=${r.lng}&y=${r.lat}`;
   }
   return "https://map.naver.com/";
 }
