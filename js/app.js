@@ -1648,9 +1648,9 @@ async function initNaverMap(clientId) {
             // Mobile: push zoom quite low to separate from top controls
             ctrl.style.bottom = '120px';
           } else {
-            // Desktop/web: lift the zoom controls a little higher (smaller visual overlap with scale bar)
-            // "살짝만 위로" — 40px from bottom
-            ctrl.style.bottom = '40px';
+            // Desktop/web: lift the zoom controls a little higher to clear the scale bar (배율 표시)
+            // "살짝만 위로" from the previous 40px
+            ctrl.style.bottom = '50px';
           }
           ctrl.style.top = 'auto';
           ctrl.style.right = '8px';
