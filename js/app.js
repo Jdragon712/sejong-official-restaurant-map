@@ -801,7 +801,8 @@ function findMapMarker(mapTarget) {
 
 function getMarkerStyle(r) {
   if (r._isStackMarker) {
-    return { tier: "rainbow", isStack: true, rank: null, color: null, zIndex: 8 };
+    const count = r._stackMembers?.length || 1;
+    return { tier: "rainbow", isStack: true, rank: null, color: null, zIndex: 8, count };
   }
   const info = getVisitRankInfo(r);
   const tier = info?.tier ?? 5;
@@ -1825,8 +1826,9 @@ function addLeafletMarkers(markerItems) {
   markerItems.forEach((r) => {
     const style = getMarkerStyle(r);
     const pinHtml = dropletPinHtml(style);
-    const iconW = 32;
-    const iconH = 40;
+    const isStack = !!style.isStack;
+    const iconW = isStack ? 36 : 32;
+    const iconH = isStack ? 44 : 40;
     const icon = L.divIcon({
       className: "pin leaflet-droplet-icon",
       html: pinHtml,
