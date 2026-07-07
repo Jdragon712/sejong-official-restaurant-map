@@ -895,6 +895,21 @@ function cleanDisplayField(value) {
   return s && s.toLowerCase() !== "nan" ? s : "";
 }
 
+/** 네비게이션용 깨끗한 주소 (층/호/건물명 제외, 도로명까지만) */
+function getCleanRoadAddress(r) {
+  let addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+  if (!addr) return "";
+  // 첫 콤마 앞까지만 (주 도로명 주소)
+  let clean = addr.split(",")[0].trim();
+  // 층, 호, 단지 등 제거
+  clean = clean.replace(/\s*\d+층.*$/i, "").trim();
+  clean = clean.replace(/\s*\d+호.*$/i, "").trim();
+  clean = clean.replace(/\s*\([^)]*\)\s*$/i, "").trim(); // (어진동, ...) 제거
+  clean = clean.replace(/\s*세종마치.*$/i, "").trim();
+  clean = clean.replace(/\s*중앙타운.*$/i, "").trim();
+  return clean || addr.split(",")[0].trim();
+}
+
 /** 인허가 업종명 → 음식점 유형·요리 종류 (대표메뉴 데이터는 없음) */
 function formatVenueCategory(raw) {
   const text = cleanDisplayField(raw);
@@ -1069,14 +1084,27 @@ function displayVenueLabel(r) {
   };
 }
 
-/** 카카오맵 웹에서 장소 카드(평점·사진)를 열 URL — link/map(좌표만)은 미니 팝업만 뜸 */
+/** 카카오맵 검색 쿼리 — 이름 우선 (네이버와 동일하게 상호명으로 정확히 뜨게) */
 function kakaoSearchQueryForVenue(r) {
-  const name = mapPoiLabel(r) || r._displayName || brandNameFromVenue(r);
-  const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address);
-  const head = road ? road.split(",")[0].trim() : "";
-  if (name && head) return `${name} ${head}`;
-  if (name) return `세종 ${name}`;
-  return head || name || "";
+  // 이름 우선 (geocode or permit or name)
+  let base = cleanDisplayField(r.geocode_place_name) || cleanDisplayField(r.permit_name) || cleanDisplayField(r.name) || "";
+  if (!base) {
+    const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || "";
+    base = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
+  }
+  base = base.replace(/본점|지점|본$/g, "").replace(/\s+/g, " ").trim();
+  if (!base) {
+    const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+    return road ? road.split(",")[0].trim() : "";
+  }
+  // 카카오도 이름 + 세종 or 지역 힌트
+  let q = /세종/i.test(base) ? base : `세종 ${base}`;
+  const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+  const isJochiwon = /조치원|금남/.test(road);
+  if (isJochiwon && base.length <= 6 && !q.includes('조치원')) {
+    q = `${base} 조치원`;
+  }
+  return q;
 }
 
 function kakaoMapUrlForVenue(r) {
@@ -1290,6 +1318,27 @@ async function openKakaoMapForVenue(r) {
 
 function setupKakaoMapLinkHandler() {
   document.addEventListener("click", (e) => {
+    // Copy address button
+    const copyBtn = e.target.closest(".copy-addr-btn");
+    if (copyBtn) {
+      const addr = copyBtn.dataset.addr;
+      if (addr) {
+        navigator.clipboard.writeText(addr).then(() => {
+          showMapToast("주소가 복사되었습니다. (네비게이션용)");
+        }).catch(() => {
+          // fallback
+          const ta = document.createElement("textarea");
+          ta.value = addr;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          showMapToast("주소가 복사되었습니다.");
+        });
+      }
+      return;
+    }
+
     const link = e.target.closest("a.kakao-map-open");
     if (!link || link.dataset.kakaoPlaceId) return;
     if (!window.kakao?.maps?.services?.Places) return;
@@ -1339,6 +1388,8 @@ function buildPopupHtml(r, { linkedFrom = null } = {}) {
     : "";
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const link = externalMapLinkHtml(r, "card-link");
+  const cleanAddr = getCleanRoadAddress(r);
+  const copyBtn = cleanAddr ? `<button class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사 (층/호 제외)">📍 주소 복사</button>` : "";
   return `<div class="map-popup-card">
     <div class="card-head">
       <p class="card-title">${escapeHtml(displayName)}</p>
@@ -1348,6 +1399,7 @@ function buildPopupHtml(r, { linkedFrom = null } = {}) {
       ${categoryLine}
       ${addr ? `<p class="card-addr">${escapeHtml(addr)}</p>` : ""}
       ${link}
+      ${copyBtn}
     </div>
   </div>`;
 }
@@ -1553,11 +1605,14 @@ function buildInlineDetailHtml(r, { linkedFrom = null } = {}) {
     : "";
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const link = externalMapLinkHtml(r, "panel-link");
+  const cleanAddr = getCleanRoadAddress(r);
+  const copyBtn = cleanAddr ? `<button class="copy-addr-btn panel-copy-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사">📍 주소 복사</button>` : "";
   return `<div class="venue-inline-detail">
     <div class="venue-detail-badges">${tierBadge}${visitBadge}</div>
     ${categoryLine}
     ${addr ? `<p class="panel-line"><span class="panel-label">주소</span>${escapeHtml(addr)}</p>` : ""}
     ${link}
+    ${copyBtn}
   </div>`;
 }
 
