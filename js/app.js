@@ -1115,13 +1115,13 @@ function kakaoMapLinkHtml(r, className) {
 }
 
 /** Naver Maps search query — 식당 이름 중심으로 검색 (네이버 예약/서비스 이용 목적).
- * 고티어(1~3티어) 우선으로 정확한 상호명이 검색되도록 이름 우선.
- * 위치 bias 때문에 세종은 이름만으로도 잘 됨. 주소 fallback은 최소한으로.
+ * 모든 티어(저티어 포함)에서 정확한 상호명으로 네이버 비즈니스 페이지가 뜨도록 이름 우선.
+ * coords bias를 항상 붙여 위치 매칭 강화.
  */
 function naverSearchQueryForVenue(r) {
-  // 1순위: geocode_place_name (실제 POI 이름, 네이버 검색에 좋음)
-  // 2순위: permit_name (인허가 상호, 공식적)
-  // 3순위: expense name
+  // 1순위: geocode_place_name (POI 이름, 네이버와 잘 매칭됨)
+  // 2순위: permit_name
+  // 3순위: name
   let base = cleanDisplayField(r.geocode_place_name) || cleanDisplayField(r.permit_name);
   if (!base) {
     const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || cleanDisplayField(r.name) || "";
@@ -1133,7 +1133,6 @@ function naverSearchQueryForVenue(r) {
   }
 
   if (!base) {
-    // 이름이 전혀 없으면 주소로 최소 fallback
     const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
     const short = road ? road.split(",")[0].trim() : "";
     return short ? `세종 ${short}` : "";
@@ -1141,24 +1140,14 @@ function naverSearchQueryForVenue(r) {
 
   base = normalizeRestaurantName(base);
 
-  // 기본은 상호명 중심. 세종 위치 bias 활용
+  // 이름 중심 + 세종 bias (사용자 요청: 이름으로 정확히 떠야 예약 등 이용 가능)
   let q = /세종/i.test(base) ? base : `세종 ${base}`;
 
-  // 고티어( high bucket )는 이름 정확히 유지. 낮은 티어거나 극단적 hard case만 힌트 추가
-  const isHighTier = (r.visit_rank_bucket === 'high') || ((r.visit_count_total || 0) >= 50);
+  // 조치원/금남 등 주변 지역은 이름 + "조치원" 힌트 추가 (이름은 유지)
   const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
-  const needsHint = !isHighTier && (base.length <= 5 || road.includes('조치원') || road.includes('침천'));
-
-  if (needsHint && road) {
-    let hint = '';
-    if (road.includes('조치원읍')) hint = '조치원읍';
-    else {
-      const m = road.match(/([가-힣]+읍|[가-힣]+(길|로))\s*\d*/);
-      if (m) hint = m[1];
-    }
-    if (hint && !q.includes(hint)) {
-      q = `${base} ${hint}`;   // 이름은 절대 버리지 말고 추가만
-    }
+  const isJochiwonArea = /조치원|금남|침천|용포/.test(road);
+  if (isJochiwonArea && base.length <= 6 && !q.includes('조치원')) {
+    q = `${base} 조치원`;
   }
 
   return q;
@@ -1771,7 +1760,11 @@ function addLeafletMarkers(markerItems) {
       iconSize: [iconW, iconH],
       iconAnchor: [iconW / 2, iconH - 2],
     });
-    const m = L.marker([r.lat, r.lng], { icon }).addTo(map);
+    // 높은 티어/스택이 위에 오도록 zIndexOffset
+    const m = L.marker([r.lat, r.lng], { 
+      icon, 
+      zIndexOffset: (style.zIndex || 2) * 100 
+    }).addTo(map);
     m._rid = r.restaurant_id;
     m._listKey = r._listKey;
     m._stackRids = r._stackMembers?.map((row) => row.restaurant_id) || null;
@@ -1801,7 +1794,17 @@ function updateMarkerPosition(markerEntry, lat, lng) {
 
 async function addMarkers() {
   clearMarkers();
-  const markerItems = restaurantsForMapMarkers();
+  let markerItems = restaurantsForMapMarkers();
+
+  // 겹칠 때 우선순위: 단골밀집(스택 z=8) > 1티어 > 2티어 ... 
+  // zIndex 높은 것 나중에 add 해서 위에 오게 (또는 zIndexOffset)
+  markerItems.sort((a, b) => {
+    const za = getMarkerStyle(a).zIndex || 0;
+    const zb = getMarkerStyle(b).zIndex || 0;
+    if (za !== zb) return za - zb; // 낮은 z 먼저, 높은 z 나중에 (on top)
+    return (b.visit_count_total || 0) - (a.visit_count_total || 0);
+  });
+
   mapMarkerCount = markerItems.length;
   const popupApi = {
     markerStyle: getMarkerStyle,
