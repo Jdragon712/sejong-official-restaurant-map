@@ -1564,37 +1564,39 @@ async function initNaverMap(clientId) {
     scaleControl: true,
   });
 
-  // Mobile-friendly positioning: map type (일반/위성) to top-left, zoom lower bottom-right
-  // to prevent them overlapping each other or bottom UI on small screens.
+  // Mobile-friendly positioning for Naver: separate map type buttons (일반/위성)
+  // from zoom +/- so they don't overlap on small screens.
   setTimeout(() => {
     try {
       const mapEl = document.getElementById('map');
       if (!mapEl) return;
-      const controls = mapEl.querySelectorAll(':scope > div[style*="position: absolute"]');
       const isMobile = window.innerWidth <= 768;
+      if (!isMobile) return;
+
+      const controls = mapEl.querySelectorAll('div[style*="position: absolute"]');
 
       controls.forEach((ctrl) => {
+        const txt = ctrl.textContent || '';
         const styleStr = ctrl.getAttribute('style') || '';
-        const hasRight = styleStr.includes('right:');
-        const hasTop = styleStr.includes('top:');
-        const h = ctrl.offsetHeight || 0;
+        const hasRight = styleStr.includes('right');
+        const hasTop = styleStr.includes('top');
 
-        if (isMobile) {
-          if (hasRight && h > 30) {
-            // Likely zoom control - push lower
-            ctrl.style.bottom = '65px';
-            ctrl.style.top = 'auto';
-            ctrl.style.right = '8px';
-          } else if (hasTop && hasRight) {
-            // Likely map type control (일반/위성) - move to top left
-            ctrl.style.top = '8px';
-            ctrl.style.left = '8px';
-            ctrl.style.right = 'auto';
-          }
+        // Map type control often contains "일반" or "위성"
+        if (txt.includes('일반') || txt.includes('위성') || txt.includes('지도')) {
+          // Move map type to top-left
+          ctrl.style.top = '8px';
+          ctrl.style.left = '8px';
+          ctrl.style.right = 'auto';
+          ctrl.style.bottom = 'auto';
+        } else if (hasRight && (styleStr.includes('height') || txt.includes('+') || txt.includes('-'))) {
+          // Zoom control: move lower on right to avoid bottom UI and map type
+          ctrl.style.bottom = '70px';
+          ctrl.style.top = 'auto';
+          ctrl.style.right = '8px';
         }
       });
     } catch (e) {}
-  }, 400);
+  }, 500);
 }
 
 function closeOpenPopups() {
