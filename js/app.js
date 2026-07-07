@@ -1464,13 +1464,21 @@ function setupMapResize() {
 
 function initLeafletMap(center) {
   mapProvider = "leaflet";
-  map = L.map("map", { zoomControl: true }).setView(
+  const useBottomRight = window.innerWidth <= 600;
+  map = L.map("map", { 
+    zoomControl: false 
+  }).setView(
     [SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng],
     LEAFLET_OFFICE_ZOOM
   );
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap",
     maxZoom: 19,
+  }).addTo(map);
+
+  // Position zoom control bottom-right on mobile to avoid overlapping pins/content
+  L.control.zoom({ 
+    position: useBottomRight ? 'bottomright' : 'topleft' 
   }).addTo(map);
 }
 
@@ -1827,8 +1835,14 @@ function addLeafletMarkers(markerItems) {
     const style = getMarkerStyle(r);
     const pinHtml = dropletPinHtml(style);
     const isStack = !!style.isStack;
-    const iconW = isStack ? 36 : 32;
-    const iconH = isStack ? 44 : 40;
+    // 모바일에서 더 작게
+    const isMobile = window.innerWidth <= 600;
+    let iconW = isStack ? 36 : 32;
+    let iconH = isStack ? 44 : 40;
+    if (isMobile) {
+      iconW = isStack ? 26 : 24;
+      iconH = isStack ? 34 : 32;
+    }
     const icon = L.divIcon({
       className: "pin leaflet-droplet-icon",
       html: pinHtml,
@@ -1945,13 +1959,16 @@ function addNaverMarkers(items) {
       (match, extraClasses) => `class="map-pin-wrap${extraClasses}" data-rid="${ridForData}"`
     );
 
+    const isMobileNaver = window.innerWidth <= 600;
+    const anchorX = isMobileNaver ? 12 : 16;
+    const anchorY = isMobileNaver ? 30 : 38;
     const marker = new naverMaps.Marker({
       position: new naverMaps.LatLng(r.lat, r.lng),
       map: map,
       title: r.name || "",
       icon: {
         content: pinHtml,
-        anchor: new naverMaps.Point(16, 38),
+        anchor: new naverMaps.Point(anchorX, anchorY),
       },
     });
 
