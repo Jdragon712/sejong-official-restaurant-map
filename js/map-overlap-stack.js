@@ -3,7 +3,7 @@
  */
 
 export const OVERLAP_RADIUS_M = 30;
-export const OVERLAP_VISUAL_RADIUS_M = 10;
+export const OVERLAP_VISUAL_RADIUS_M = 25; // increased for better mobile grouping (was 10m, too small on screen)
 
 export function haversineDistanceM(a, b) {
   const R = 6371000;
