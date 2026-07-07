@@ -1119,8 +1119,10 @@ function kakaoMapLinkHtml(r, className) {
  * 위치 bias 때문에 세종은 이름만으로도 잘 됨. 주소 fallback은 최소한으로.
  */
 function naverSearchQueryForVenue(r) {
-  // geocode_place_name (Kakao POI)이 네이버에서도 잘 먹히는 경우가 많음
-  let base = cleanDisplayField(r.geocode_place_name);
+  // 1순위: geocode_place_name (실제 POI 이름, 네이버 검색에 좋음)
+  // 2순위: permit_name (인허가 상호, 공식적)
+  // 3순위: expense name
+  let base = cleanDisplayField(r.geocode_place_name) || cleanDisplayField(r.permit_name);
   if (!base) {
     const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || cleanDisplayField(r.name) || "";
     let searchDisplay = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
