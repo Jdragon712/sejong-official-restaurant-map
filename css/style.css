@@ -633,52 +633,15 @@ body {
 @media (max-width: 600px) {
   .agency-list { columns: 1; }
 
-  /* 모바일에서 마커 크기 대폭 줄여 겹침 완화 (아이콘 footprint 줄임) */
-  .map-pin-wrap {
-    width: 20px;
-    height: 26px;
-  }
-  .droplet-body {
-    width: 12px;
-    height: 12px;
-  }
-  .tier-1 .droplet-body { width: 15px; height: 15px; }
-  .tier-2 .droplet-body { width: 14px; height: 14px; }
-  .tier-4 .droplet-body { width: 11px; height: 11px; }
-  .tier-5 .droplet-body { width: 10px; height: 10px; }
-
-  .map-pin-stack {
-    width: 22px;
-    height: 28px;
-  }
-  .map-pin-stack .droplet-body {
-    width: 13px;
-    height: 13px;
-  }
-
-  .stack-count {
-    font-size: 7px;
-    padding: 0 2px;
-    top: 0;
-    right: 0;
-  }
-
-  /* 줌 컨트롤 등 겹침 방지 - 더 컴팩트하게 */
+  /* 줌 컨트롤 컴팩트 on mobile */
   .leaflet-control-zoom {
     margin: 4px !important;
-    transform: scale(0.8);
-    transform-origin: bottom right;
   }
   .leaflet-control-zoom a {
-    width: 18px !important;
-    height: 18px !important;
-    line-height: 18px !important;
-    font-size: 12px !important;
-  }
-
-  /* Naver/Kakao 컨트롤도 모바일에서 아래로 */
-  #map > div[style*="position: absolute"] {
-    /* 일반적인 absolute 컨트롤 push */
+    width: 20px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+    font-size: 14px !important;
   }
 }
 
@@ -891,22 +854,7 @@ body {
   height: 24px;
 }
 
-.stack-count {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  background: #fff;
-  color: #111;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 1px 4px;
-  border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  border: 1px solid #ddd;
-  z-index: 10;
-  pointer-events: none;
-}
+
 
 .map-marker.active .droplet-body {
   transform: rotate(-45deg) scale(1.1);
@@ -1133,20 +1081,34 @@ body {
   max-width: 292px;
   font-family: var(--font);
 
-/* Naver Maps zoom controls positioning */
+  color: var(--text);
+  background: var(--surface-solid);
+}
+
+/* Naver Maps controls positioning - separate map type (일반/위성) and zoom */
+#map > div > div[style*="position: absolute"] {
+  /* reset broad */
+}
+
 #map > div > div[style*="position: absolute"][style*="right"] {
   right: 8px !important;
 }
 
 @media (max-width: 768px) {
-  /* Move zoom to bottom right on mobile, a bit lower to avoid overlap */
+  /* Zoom control to lower bottom right on mobile */
   #map > div > div[style*="position: absolute"][style*="right"] {
-    bottom: 55px !important;
+    bottom: 70px !important;  /* lower to give space from bottom UI */
     top: auto !important;
+    right: 8px !important;
   }
-}
-  color: var(--text);
-  background: var(--surface-solid);
+
+  /* Map type control (일반/위성) to top left on mobile to avoid overlap with zoom */
+  #map > div > div[style*="position: absolute"][style*="top"][style*="right"] {
+    top: 8px !important;
+    left: 8px !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
 }
 
 .map-popup-card .card-head {
