@@ -632,6 +632,39 @@ body {
 
 @media (max-width: 600px) {
   .agency-list { columns: 1; }
+
+  /* 모바일에서 마커 크기 줄이고 겹침 완화 */
+  .map-pin-wrap {
+    width: 28px;
+    height: 36px;
+  }
+  .droplet-body {
+    width: 18px;
+    height: 18px;
+  }
+  .tier-1 .droplet-body { width: 22px; height: 22px; }
+  .tier-2 .droplet-body { width: 20px; height: 20px; }
+  .tier-4 .droplet-body { width: 17px; height: 17px; }
+  .tier-5 .droplet-body { width: 16px; height: 16px; }
+
+  .map-pin-stack {
+    width: 30px;
+    height: 38px;
+  }
+  .map-pin-stack .droplet-body {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stack-count {
+    font-size: 9px;
+    padding: 0 3px;
+  }
+
+  /* 줌 컨트롤 등 겹침 방지 */
+  .leaflet-control-zoom {
+    margin: 8px !important;
+  }
 }
 
 .site-footer {
@@ -841,6 +874,23 @@ body {
 .map-pin-stack .droplet-body {
   width: 24px;
   height: 24px;
+}
+
+.stack-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #fff;
+  color: #111;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  border: 1px solid #ddd;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .map-marker.active .droplet-body {
