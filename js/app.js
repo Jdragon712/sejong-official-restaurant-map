@@ -1543,6 +1543,63 @@ function loadNaverSdk(clientId, timeoutMs = 8000) {
   });
 }
 
+function addMobileMapTypeToggle(map, naverMaps) {
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
+
+  const toggle = document.createElement('div');
+  toggle.style.cssText = `
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    font-size: 12px;
+    overflow: hidden;
+    border: 1px solid #dadce0;
+  `;
+
+  toggle.innerHTML = `
+    <div data-type="normal" style="padding: 4px 10px; cursor: pointer; background: #1a73e8; color: white; font-weight: 500;">일반</div>
+    <div data-type="satellite" style="padding: 4px 10px; cursor: pointer; background: white; color: #3c4043;">위성</div>
+  `;
+
+  mapEl.appendChild(toggle);
+
+  const normalBtn = toggle.querySelector('[data-type="normal"]');
+  const satBtn = toggle.querySelector('[data-type="satellite"]');
+
+  const setActive = (type) => {
+    if (type === 'normal') {
+      normalBtn.style.background = '#1a73e8';
+      normalBtn.style.color = 'white';
+      satBtn.style.background = 'white';
+      satBtn.style.color = '#3c4043';
+    } else {
+      satBtn.style.background = '#1a73e8';
+      satBtn.style.color = 'white';
+      normalBtn.style.background = 'white';
+      normalBtn.style.color = '#3c4043';
+    }
+  };
+
+  normalBtn.addEventListener('click', () => {
+    map.setMapTypeId(naverMaps.MapTypeId.NORMAL);
+    setActive('normal');
+  });
+
+  satBtn.addEventListener('click', () => {
+    map.setMapTypeId(naverMaps.MapTypeId.SATELLITE);
+    setActive('satellite');
+  });
+
+  // initial state
+  setActive('normal');
+}
+
 async function initNaverMap(clientId) {
   await waitForWindowReady();
   await waitForMapContainer("map");
@@ -1552,9 +1609,9 @@ async function initNaverMap(clientId) {
   map = new naverMaps.Map("map", {
     center: new naverMaps.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng),
     zoom: 12,
-    mapTypeControl: true,
+    mapTypeControl: !isMobile,   // disable default on mobile to avoid overlap with zoom
     mapTypeControlOptions: {
-      position: isMobile ? naverMaps.Position.TOP_LEFT : naverMaps.Position.TOP_RIGHT,
+      position: naverMaps.Position.TOP_RIGHT,
     },
     zoomControl: true,
     zoomControlOptions: {
@@ -1564,42 +1621,12 @@ async function initNaverMap(clientId) {
     scaleControl: true,
   });
 
-  // Mobile-friendly positioning for Naver: separate map type buttons (일반/위성)
-  // from zoom +/- buttons so they don't overlap on small screens.
-  setTimeout(() => {
-    try {
-      const mapEl = document.getElementById('map');
-      if (!mapEl) return;
-      const isMobile = window.innerWidth <= 768;
-      if (!isMobile) return;
+  if (isMobile) {
+    addMobileMapTypeToggle(map, naverMaps);
+  }
 
-      const controls = mapEl.querySelectorAll('div[style*="position: absolute"]');
-
-      controls.forEach((ctrl) => {
-        const txt = (ctrl.textContent || '').trim();
-        const styleStr = ctrl.getAttribute('style') || '';
-
-        // Detect map type control by text "일반" or "위성"
-        const isMapType = txt.includes('일반') || txt.includes('위성') || txt.includes('지도');
-        if (isMapType) {
-          ctrl.style.top = '8px';
-          ctrl.style.left = '8px';
-          ctrl.style.right = 'auto';
-          ctrl.style.bottom = 'auto';
-          return;
-        }
-
-        // Detect zoom by containing + or - or being taller
-        const hasZoomChar = txt.includes('+') || txt.includes('-');
-        const h = ctrl.offsetHeight || 0;
-        if (hasZoomChar || (styleStr.includes('right') && h > 25)) {
-          ctrl.style.bottom = '90px';  // plenty of space from bottom and from map type
-          ctrl.style.top = 'auto';
-          ctrl.style.right = '8px';
-        }
-      });
-    } catch (e) {}
-  }, 600);
+  // (mobile map type toggle is handled by custom addMobileMapTypeToggle above)
+  // No need for the old DOM hack now that we use a controlled custom toggle on mobile.
 }
 
 function closeOpenPopups() {
