@@ -1840,8 +1840,8 @@ function addLeafletMarkers(markerItems) {
     let iconW = isStack ? 36 : 32;
     let iconH = isStack ? 44 : 40;
     if (isMobile) {
-      iconW = isStack ? 26 : 24;
-      iconH = isStack ? 34 : 32;
+      iconW = isStack ? 22 : 20;
+      iconH = isStack ? 28 : 26;
     }
     const icon = L.divIcon({
       className: "pin leaflet-droplet-icon",
