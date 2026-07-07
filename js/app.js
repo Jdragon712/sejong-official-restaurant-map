@@ -1623,6 +1623,20 @@ async function initNaverMap(clientId) {
 
   if (isMobile) {
     addMobileMapTypeToggle(map, naverMaps);
+
+    // Push Naver zoom control further down on mobile so it doesn't sit next to the top-right map type toggle
+    setTimeout(() => {
+      try {
+        const mapEl = document.getElementById('map');
+        if (!mapEl) return;
+        const zoom = mapEl.querySelector('div[style*="position: absolute"][style*="right"]');
+        if (zoom && (zoom.textContent.includes('+') || zoom.textContent.includes('-'))) {
+          zoom.style.bottom = '85px';
+          zoom.style.right = '8px';
+          zoom.style.top = 'auto';
+        }
+      } catch (e) {}
+    }, 450);
   }
 
   // (mobile map type toggle is handled by custom addMobileMapTypeToggle above)
