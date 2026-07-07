@@ -167,14 +167,11 @@ function locationKey(r) {
 function normalizeRestaurantName(name) {
   if (!name) return name;
   let n = String(name);
-  // For this specific restaurant, Naver indexes it as "삼선미 나주곰탕 세종청사점" (without "소머리국밥")
-  // Strip the descriptive "소머리국밥" part for accurate search and display
+  // Strip descriptive parts like "소머리국밥" for cleaner names in display and Naver search
   n = n.replace(/소머리국밥/gi, '').replace(/\s+/g, ' ').trim();
-  // Ensure proper spacing for Naver (e.g. "나주곰탕 소머리국밥" if needed, but for search we prefer shorter)
-  n = n.replace(/나주곰탕소머리국밥/gi, '나주곰탕 소머리국밥');
+  // General spacing normalization for Naver search compatibility
   n = n.replace(/([가-힣])(소머리국밥|국밥|곰탕|찜닭|냉면|갈비|만두|치킨|피자)/gi, '$1 $2');
   n = n.replace(/(나주|삼선미|소머리)(곰탕|국밥)/gi, '$1 $2');
-  // Final cleanup
   n = n.replace(/\s+/g, ' ').trim();
   return n;
 }
@@ -1118,15 +1115,14 @@ function kakaoMapLinkHtml(r, className) {
 }
 
 /** Naver Maps search query — 식당 이름 중심으로 검색.
- * "본점", "지점" 등은 제거해서 Naver에 실제 등록된 이름으로 검색되게 함.
- * 이름이 모호할 수 있는 경우(짧거나 흔한 키워드)에는 동/도로 힌트를 살짝 붙임.
+ * 세종시 네이버 지도 특성: 식당이름만 정확해도 위치(세종) 기반으로 주변부터 검색됨.
+ * 복잡한 동/주소 힌트 불필요. 이름 + 세종 정도면 충분.
  */
 function naverSearchQueryForVenue(r) {
   // Prefer geocode_place_name (from Kakao POI) as it is often the name Naver also recognizes.
   let base = cleanDisplayField(r.geocode_place_name);
   if (!base) {
     const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || cleanDisplayField(r.name) || "";
-    // Clean name for search: remove English in parentheses to avoid fuzzy matches (e.g. Pastipicio -> 파스타이오)
     let searchDisplay = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
     const core = extractCoreName(searchDisplay);
     base = stripBranchSuffix(core);
@@ -1142,66 +1138,9 @@ function naverSearchQueryForVenue(r) {
 
   base = normalizeRestaurantName(base);
 
-  // 이미 세종이나 주요 동이 들어있으면 base 그대로 (e.g. "세종메밀꽃필무렵 본점")
-  const hasLoc = /(세종|노을|나성|도담|아름|종촌|고운|보람|대평|새롬|다정|반곡|소담|해밀|산울|집현)/i.test(base);
-  let q = hasLoc ? base : `세종 ${base}`;
-
-  // 위치 힌트 추출: 실제 세종 동 이름 우선 (한솔동 등). "상가동", "1층" 같은 건물명은 절대 사용하지 않음.
-  const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
-  let locHint = "";
-
-  const sejongDongs = ['한솔동','새롬동','나성동','어진동','보람동','도담동','아름동','종촌동','고운동','다정동','반곡동','소담동','해밀동','산울동','집현동'];
-  const badHints = ['상가동', '1층', '2층', '전체호', '1단지', '2단지'];
-
-  // 1. Look inside parentheses first for real dong (e.g. (한솔동, 첫마을1단지))
-  const parenMatch = road.match(/\(([^)]+)\)/);
-  if (parenMatch) {
-    const inside = parenMatch[1];
-    for (const d of sejongDongs) {
-      if (inside.includes(d)) {
-        locHint = d;
-        break;
-      }
-    }
-    // If no dong in paren, try distinctive building like "더센트럴", "첫마을"
-    if (!locHint) {
-      const bMatch = inside.match(/([가-힣]*[트럴|마을|센터|빌딩|아파트][^,\s]*)/);
-      if (bMatch && !badHints.some(b => bMatch[1].includes(b))) {
-        locHint = bMatch[1];
-      }
-    }
-  }
-
-  // 2. Fallback: find any known dong in the whole address
-  if (!locHint) {
-    for (const d of sejongDongs) {
-      if (road.includes(d)) {
-        locHint = d;
-        break;
-      }
-    }
-  }
-
-  // 3. Last resort: road prefix like 노을 (avoid if it leads to bad queries)
-  if (!locHint) {
-    const roadMatch = road.match(/(노을|나성|한솔|새롬|다정|보람|소담|고운|아름|종촌|도담|반곡)[^\s,0-9]*/);
-    if (roadMatch) locHint = roadMatch[0];
-  }
-
-  // Prefer "이름 + 동" or "이름 + distinctive" as user confirmed it works best for Naver.
-  // Only add if it doesn't make the query too long/specific.
-  if (locHint && !hasLoc && !badHints.some(b => locHint.includes(b))) {
-    q = `${base} ${locHint}`;
-  } else if (!hasLoc) {
-    q = `세종 ${base}`;
-  }
-
-  // Final guard: if query still contains too much address junk, fall back to clean name + 세종
-  if ((q.includes("로 ") && q.includes("호")) || q.includes("상가동")) {
-    q = hasLoc ? base : `세종 ${base}`;
-  }
-
-  return q;
+  // 단순화: 이름 정확히 + 세종 (위치 bias 활용)
+  if (/세종/i.test(base)) return base;
+  return `세종 ${base}`;
 }
 
 function naverMapUrlForVenue(r) {
