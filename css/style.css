@@ -1095,9 +1095,9 @@ body {
     bottom: auto !important;
   }
 
-  /* Push zoom control ( +/- ) lower on the right to prevent overlap with map type or other elements */
+  /* Push zoom control ( +/- ) lower on the right to prevent overlap with map type (일반/위성) or other elements */
   #map > div > div[style*="position: absolute"][style*="right"] {
-    bottom: 100px !important;
+    bottom: 120px !important;
     top: auto !important;
     right: 8px !important;
   }
