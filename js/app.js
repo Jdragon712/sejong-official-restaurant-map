@@ -1104,6 +1104,11 @@ function getBestSearchBase(r) {
 function kakaoSearchQueryForVenue(r) {
   let base = getBestSearchBase(r);
   if (!base) {
+    // last resort: try raw name, then address head
+    base = cleanDisplayField(r.name) || cleanDisplayField(r._displayName) || "";
+    base = base.replace(/본점|지점|본$/g, "").replace(/\s+/g, " ").trim();
+  }
+  if (!base) {
     const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
     return road ? road.split(",")[0].trim() : "";
   }
