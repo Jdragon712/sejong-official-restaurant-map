@@ -1140,18 +1140,16 @@ function naverSearchQueryForVenue(r) {
 
   let q = /세종/i.test(base) ? base : `세종 ${base}`;
 
-  // 이름만으로 검색 안 되는 경우(짧거나 제너릭, 조치원 등) 주소 힌트 보강
+  // 이름만으로 검색 안 되는 경우(은주식당 등) → Naver는 이름 검색이 약하니 주소 중심으로
   const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const isHardCase = base.length <= 6 || road.includes('조치원') || road.includes('침천');
   if (isHardCase && road) {
-    let hint = '';
-    if (road.includes('조치원읍')) hint = '조치원읍';
-    else {
-      const m = road.match(/([가-힣]+읍|[가-힣]+(길|로))\s*\d*/);
-      if (m) hint = m[1];
-    }
-    if (hint && !q.includes(hint)) {
-      q = `${base} ${hint}`;
+    // 주소로 직접 검색하면 위치는 정확히 나옴 (비즈니스 핀이 없어도 지도 중심 이동)
+    const shortRoad = road.replace(/세종특별자치시\s*/, '').split(',')[0].trim();
+    if (shortRoad) {
+      q = shortRoad;   // e.g. "조치원읍 침천길 15"
+    } else if (!q.includes('조치원')) {
+      q = `${base} 조치원읍`;
     }
   }
 
