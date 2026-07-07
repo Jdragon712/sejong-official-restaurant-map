@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260708a";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260708a";
+} from "./map-kakao.js?v=20260708b";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260708b";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260708a";
+} from "./map-overlap-stack.js?v=20260708b";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -1670,63 +1670,79 @@ async function initNaverMap(clientId) {
     }
   };
 
-  // Force size immediately (prevents blank/partial + marker shift)
-  applySize();
+  // Robust control positioning.
+  // Naver injects mapType (top-right) and zoom (we want bottom-right).
+  // Previous broad text/size checks + CSS sometimes caused side-by-side or overlap (maptype + zoom at same level).
+  function adjustNaverControls() {
+    const el = document.getElementById('map');
+    if (!el || !map) return;
+    const isMobile = window.innerWidth <= 768;
 
-  // Multiple follow-ups in the first second — critical because Naver tiles + internal layout
-  // often settle after first paint / font / other DOM.
-  requestAnimationFrame(applySize);
-  setTimeout(applySize, 30);
-  setTimeout(applySize, 80);
-  setTimeout(applySize, 160);
-  setTimeout(applySize, 320);
-  setTimeout(applySize, 550);
-  setTimeout(applySize, 900);
+    const candidates = Array.from(el.querySelectorAll('div[style*="position: absolute"]'));
+    candidates.forEach((ctrl) => {
+      const ww = ctrl.offsetWidth || 0;
+      const hh = ctrl.offsetHeight || 0;
+      // Very small UI controls only
+      if (ww < 12 || ww > 240 || hh < 12 || hh > 180) return;
 
-  // Desktop and mobile: keep map type (일반/위성) at top-right,
-  // zoom at bottom-right but lifted slightly on desktop to avoid scale overlap.
-  // Use *strict* size guard so we never mutate large tile containers or other absolute divs.
-  setTimeout(() => {
-    try {
-      const el = document.getElementById('map');
-      if (!el) return;
+      const txt = (ctrl.innerText || ctrl.textContent || '').trim();
 
-      const controls = el.querySelectorAll('div[style*="position: absolute"]');
-      const isMobile = window.innerWidth <= 768;
-
-      controls.forEach((ctrl) => {
-        const txt = (ctrl.textContent || '').trim();
-        const ww = ctrl.offsetWidth || 0;
-        const hh = ctrl.offsetHeight || 0;
-        const isLikelyControl = ww > 10 && ww < 220 && hh > 10 && hh < 170;
-
-        const isMapType = isLikelyControl && (txt.includes('일반') || txt.includes('위성') || txt.includes('지도'));
-        const hasZoomGlyph = txt.includes('+') || txt.includes('-');
-        const isZoom = isLikelyControl && hasZoomGlyph;
-
-        if (isMapType) {
-          ctrl.style.top = '8px';
-          ctrl.style.right = '8px';
-          ctrl.style.left = 'auto';
-          ctrl.style.bottom = 'auto';
-        } else if (isZoom) {
-          if (isMobile) {
-            ctrl.style.bottom = '120px';
-          } else {
-            ctrl.style.bottom = '50px';
+      // Also inspect children — Naver zoom +/− are often in inner spans/buttons, wrapper text may be empty
+      let hasZoomSymbol = txt.includes('+') || txt.includes('-') || txt.includes('＋') || txt.includes('－');
+      if (!hasZoomSymbol) {
+        ctrl.querySelectorAll('div, button, span, a').forEach((kid) => {
+          const kt = (kid.innerText || kid.textContent || '').trim();
+          if (kt === '+' || kt === '-' || kt.includes('+') || kt.includes('-')) {
+            hasZoomSymbol = true;
           }
-          ctrl.style.top = 'auto';
-          ctrl.style.right = '8px';
-        }
-      });
-    } catch (e) {}
-  }, 520);
+        });
+      }
 
-  // Final safety net after full window load
-  window.addEventListener('load', () => {
-    setTimeout(applySize, 10);
-    setTimeout(applySize, 120);
-  }, { once: true });
+      const isMapType = /일반|위성|지도/.test(txt);
+
+      try {
+        if (isMapType) {
+          // Map type stays top-right
+          ctrl.style.setProperty('top', '8px', 'important');
+          ctrl.style.setProperty('right', '8px', 'important');
+          ctrl.style.setProperty('left', 'auto', 'important');
+          ctrl.style.setProperty('bottom', 'auto', 'important');
+        } else if (hasZoomSymbol) {
+          // Zoom must go to bottom-right, lifted just enough on desktop to clear scale bar
+          const bottomVal = isMobile ? '120px' : '55px';
+          ctrl.style.setProperty('bottom', bottomVal, 'important');
+          ctrl.style.setProperty('top', 'auto', 'important');
+          ctrl.style.setProperty('right', '8px', 'important');
+        }
+      } catch (_) {}
+    });
+  }
+
+  // Run size + control adjust multiple times (controls can appear after tiles, fonts, etc.)
+  const runAdjusts = () => {
+    applySize();
+    adjustNaverControls();
+  };
+
+  requestAnimationFrame(runAdjusts);
+  setTimeout(runAdjusts, 40);
+  setTimeout(runAdjusts, 120);
+  setTimeout(runAdjusts, 280);
+  setTimeout(runAdjusts, 520);
+  setTimeout(runAdjusts, 850);
+  setTimeout(runAdjusts, 1300);
+
+  // Re-adjust when Naver map resizes or idles (prevents drift/overlap after layout changes)
+  try {
+    if (window.naver && window.naver.maps && window.naver.maps.Event) {
+      const reAdjust = () => setTimeout(adjustNaverControls, 60);
+      naver.maps.Event.addListener(map, 'resize', reAdjust);
+      naver.maps.Event.addListener(map, 'idle', reAdjust);
+    }
+  } catch (_) {}
+
+  // Final safety after full load
+  window.addEventListener('load', () => setTimeout(runAdjusts, 80), { once: true });
 }
 
 function closeOpenPopups() {
