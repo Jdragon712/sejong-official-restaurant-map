@@ -1085,10 +1085,12 @@ body {
   background: var(--surface-solid);
 }
 
-/* Naver Maps control fixes: map type (일반/위성) top-right, zoom bottom-right.
-   Use fairly specific selectors + size-ish hints to avoid hitting tile containers. */
+/* Naver Maps control positioning is now primarily handled in JS (adjustNaverControls)
+   with strict size checks + child glyph search + !important setProperty.
+   These CSS rules are secondary / fallback only and kept narrow to avoid fighting
+   the map type vs zoom (which was causing the side-by-side overlap in the screenshot). */
 @media (max-width: 768px) {
-  /* Keep map type at top-right */
+  /* Map type (일반/위성) top-right */
   #map > div > div[style*="position: absolute"][style*="top"][style*="right"] {
     top: 8px !important;
     right: 8px !important;
@@ -1096,25 +1098,24 @@ body {
     bottom: auto !important;
   }
 
-  /* Push zoom control lower on the right (away from top controls) */
-  #map > div > div[style*="position: absolute"][style*="right"] {
+  /* Mobile zoom lower (only elements that look like they don't carry "top") */
+  #map > div > div[style*="position: absolute"][style*="right"]:not([style*="top"]) {
     bottom: 120px !important;
     top: auto !important;
     right: 8px !important;
   }
 
-  /* Compact controls on mobile */
   #map [class*="zoom"], #map [class*="maptype"] {
-    transform: scale(0.9);
+    transform: scale(0.92);
     transform-origin: top right;
   }
 }
 
-/* Desktop/web: lift +/- zoom buttons slightly so they don't overlap the scale bar (배율 표시).
-   Matches user's "살짝만 위로" request. */
+/* Desktop: we mostly rely on JS now (bottom ~55px for zoom to clear scale).
+   Narrow selector to reduce chance of moving the map type control. */
 @media (min-width: 769px) {
-  #map > div > div[style*="position: absolute"][style*="right"] {
-    bottom: 50px !important;
+  #map > div > div[style*="position: absolute"][style*="right"]:not([style*="top"]) {
+    bottom: 55px !important;
     top: auto !important;
     right: 8px !important;
   }
