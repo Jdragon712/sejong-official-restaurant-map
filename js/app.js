@@ -1565,7 +1565,7 @@ async function initNaverMap(clientId) {
   });
 
   // Mobile-friendly positioning for Naver: separate map type buttons (일반/위성)
-  // from zoom +/- so they don't overlap on small screens.
+  // from zoom +/- buttons so they don't overlap on small screens.
   setTimeout(() => {
     try {
       const mapEl = document.getElementById('map');
@@ -1576,27 +1576,30 @@ async function initNaverMap(clientId) {
       const controls = mapEl.querySelectorAll('div[style*="position: absolute"]');
 
       controls.forEach((ctrl) => {
-        const txt = ctrl.textContent || '';
+        const txt = (ctrl.textContent || '').trim();
         const styleStr = ctrl.getAttribute('style') || '';
-        const hasRight = styleStr.includes('right');
-        const hasTop = styleStr.includes('top');
 
-        // Map type control often contains "일반" or "위성"
-        if (txt.includes('일반') || txt.includes('위성') || txt.includes('지도')) {
-          // Move map type to top-left
+        // Detect map type control by text "일반" or "위성"
+        const isMapType = txt.includes('일반') || txt.includes('위성') || txt.includes('지도');
+        if (isMapType) {
           ctrl.style.top = '8px';
           ctrl.style.left = '8px';
           ctrl.style.right = 'auto';
           ctrl.style.bottom = 'auto';
-        } else if (hasRight && (styleStr.includes('height') || txt.includes('+') || txt.includes('-'))) {
-          // Zoom control: move lower on right to avoid bottom UI and map type
-          ctrl.style.bottom = '70px';
+          return;
+        }
+
+        // Detect zoom by containing + or - or being taller
+        const hasZoomChar = txt.includes('+') || txt.includes('-');
+        const h = ctrl.offsetHeight || 0;
+        if (hasZoomChar || (styleStr.includes('right') && h > 25)) {
+          ctrl.style.bottom = '90px';  // plenty of space from bottom and from map type
           ctrl.style.top = 'auto';
           ctrl.style.right = '8px';
         }
       });
     } catch (e) {}
-  }, 500);
+  }, 600);
 }
 
 function closeOpenPopups() {
