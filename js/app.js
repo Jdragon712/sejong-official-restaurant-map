@@ -1398,7 +1398,11 @@ function buildPopupHtml(r, { linkedFrom = null } = {}) {
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const link = externalMapLinkHtml(r, "card-link");
   const cleanAddr = getCleanRoadAddress(r);
-  const copyBtn = cleanAddr ? `<button class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사 (층/호 제외)">📍 주소 복사</button>` : "";
+  let addrHtml = addr ? `<p class="card-addr">${escapeHtml(addr)}` : "";
+  if (addr && cleanAddr) {
+    addrHtml += ` <span class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사 (층/호 제외)" style="cursor:pointer; color:#0066cc; font-size:0.8em;">복사</span>`;
+  }
+  if (addr) addrHtml += `</p>`;
   return `<div class="map-popup-card">
     <div class="card-head">
       <p class="card-title">${escapeHtml(displayName)}</p>
@@ -1406,9 +1410,8 @@ function buildPopupHtml(r, { linkedFrom = null } = {}) {
     </div>
     <div class="card-body">
       ${categoryLine}
-      ${addr ? `<p class="card-addr">${escapeHtml(addr)}</p>` : ""}
+      ${addrHtml}
       ${link}
-      ${copyBtn}
     </div>
   </div>`;
 }
@@ -1615,13 +1618,16 @@ function buildInlineDetailHtml(r, { linkedFrom = null } = {}) {
   const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const link = externalMapLinkHtml(r, "panel-link");
   const cleanAddr = getCleanRoadAddress(r);
-  const copyBtn = cleanAddr ? `<button class="copy-addr-btn panel-copy-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사">📍 주소 복사</button>` : "";
+  let addrHtml = addr ? `<p class="panel-line"><span class="panel-label">주소</span>${escapeHtml(addr)}` : "";
+  if (addr && cleanAddr) {
+    addrHtml += ` <span class="copy-addr-btn" data-addr="${escapeHtml(cleanAddr)}" title="네비게이션용 주소 복사" style="cursor:pointer; color:#0066cc; font-size:0.85em;">복사</span>`;
+  }
+  if (addr) addrHtml += `</p>`;
   return `<div class="venue-inline-detail">
     <div class="venue-detail-badges">${tierBadge}${visitBadge}</div>
     ${categoryLine}
-    ${addr ? `<p class="panel-line"><span class="panel-label">주소</span>${escapeHtml(addr)}</p>` : ""}
+    ${addrHtml}
     ${link}
-    ${copyBtn}
   </div>`;
 }
 
