@@ -1116,7 +1116,7 @@ function kakaoMapLinkHtml(r, className) {
 
 /** Naver Maps search query — 식당 이름 중심으로 검색.
  * 세종시 네이버 지도 특성: 식당이름만 정확해도 위치(세종) 기반으로 주변부터 검색됨.
- * 복잡한 동/주소 힌트 불필요. 이름 + 세종 정도면 충분.
+ * 단, 이름만으로 안 나오는 경우(은주식당 등 조치원/소규모)는 주소 힌트(읍/길) 추가.
  */
 function naverSearchQueryForVenue(r) {
   // Prefer geocode_place_name (from Kakao POI) as it is often the name Naver also recognizes.
@@ -1138,9 +1138,24 @@ function naverSearchQueryForVenue(r) {
 
   base = normalizeRestaurantName(base);
 
-  // 단순화: 이름 정확히 + 세종 (위치 bias 활용)
-  if (/세종/i.test(base)) return base;
-  return `세종 ${base}`;
+  let q = /세종/i.test(base) ? base : `세종 ${base}`;
+
+  // 이름만으로 검색 안 되는 경우(짧거나 제너릭, 조치원 등) 주소 힌트 보강
+  const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+  const isHardCase = base.length <= 6 || road.includes('조치원') || road.includes('침천');
+  if (isHardCase && road) {
+    let hint = '';
+    if (road.includes('조치원읍')) hint = '조치원읍';
+    else {
+      const m = road.match(/([가-힣]+읍|[가-힣]+(길|로))\s*\d*/);
+      if (m) hint = m[1];
+    }
+    if (hint && !q.includes(hint)) {
+      q = `${base} ${hint}`;
+    }
+  }
+
+  return q;
 }
 
 function naverMapUrlForVenue(r) {
