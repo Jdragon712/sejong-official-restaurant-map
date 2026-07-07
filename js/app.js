@@ -1084,20 +1084,29 @@ function displayVenueLabel(r) {
   };
 }
 
-/** 카카오맵 검색 쿼리 — 이름 우선 (네이버와 동일하게 상호명으로 정확히 뜨게) */
-function kakaoSearchQueryForVenue(r) {
-  // 이름 우선 (geocode or permit or name)
+function getBestSearchBase(r) {
+  // Prefer verified POI name or permit name for accurate business page match
   let base = cleanDisplayField(r.geocode_place_name) || cleanDisplayField(r.permit_name) || cleanDisplayField(r.name) || "";
   if (!base) {
     const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || "";
     base = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
   }
   base = base.replace(/본점|지점|본$/g, "").replace(/\s+/g, " ").trim();
+
+  // Strip numeric brand prefix (e.g. 1980황가원 -> 황가원) so search matches Naver/Kakao registered name
+  const numMatch = base.match(/^\d+\s*(.+)$/);
+  if (numMatch) base = numMatch[1];
+
+  return base;
+}
+
+/** 카카오맵 검색 쿼리 — 이름 우선 (네이버와 동일하게 상호명으로 정확히 뜨게) */
+function kakaoSearchQueryForVenue(r) {
+  let base = getBestSearchBase(r);
   if (!base) {
     const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
     return road ? road.split(",")[0].trim() : "";
   }
-  // 카카오도 이름 + 세종 or 지역 힌트
   let q = /세종/i.test(base) ? base : `세종 ${base}`;
   const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
   const isJochiwon = /조치원|금남/.test(road);
@@ -1147,19 +1156,7 @@ function kakaoMapLinkHtml(r, className) {
  * coords bias를 항상 붙여 위치 매칭 강화.
  */
 function naverSearchQueryForVenue(r) {
-  // 1순위: geocode_place_name (POI 이름, 네이버와 잘 매칭됨)
-  // 2순위: permit_name
-  // 3순위: name
-  let base = cleanDisplayField(r.geocode_place_name) || cleanDisplayField(r.permit_name);
-  if (!base) {
-    const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || cleanDisplayField(r.name) || "";
-    let searchDisplay = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
-    const core = extractCoreName(searchDisplay);
-    base = stripBranchSuffix(core);
-    base = base.replace(/본점|지점|본$/g, "").replace(/\s+/g, " ").trim();
-    if (base.length < 2) base = core.replace(/본점|지점/g, "").trim();
-  }
-
+  let base = getBestSearchBase(r);
   if (!base) {
     const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
     const short = road ? road.split(",")[0].trim() : "";
