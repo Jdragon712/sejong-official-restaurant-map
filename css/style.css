@@ -633,37 +633,44 @@ body {
 @media (max-width: 600px) {
   .agency-list { columns: 1; }
 
-  /* 모바일에서 마커 크기 줄이고 겹침 완화 */
+  /* 모바일에서 마커 크기 더 줄여 겹침 완화 */
   .map-pin-wrap {
-    width: 28px;
-    height: 36px;
+    width: 24px;
+    height: 32px;
   }
   .droplet-body {
-    width: 18px;
-    height: 18px;
+    width: 15px;
+    height: 15px;
   }
-  .tier-1 .droplet-body { width: 22px; height: 22px; }
-  .tier-2 .droplet-body { width: 20px; height: 20px; }
-  .tier-4 .droplet-body { width: 17px; height: 17px; }
-  .tier-5 .droplet-body { width: 16px; height: 16px; }
+  .tier-1 .droplet-body { width: 18px; height: 18px; }
+  .tier-2 .droplet-body { width: 17px; height: 17px; }
+  .tier-4 .droplet-body { width: 14px; height: 14px; }
+  .tier-5 .droplet-body { width: 13px; height: 13px; }
 
   .map-pin-stack {
-    width: 30px;
-    height: 38px;
+    width: 26px;
+    height: 34px;
   }
   .map-pin-stack .droplet-body {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
   }
 
   .stack-count {
-    font-size: 9px;
-    padding: 0 3px;
+    font-size: 8px;
+    padding: 0 2px;
+    top: -1px;
+    right: -1px;
   }
 
   /* 줌 컨트롤 등 겹침 방지 */
   .leaflet-control-zoom {
     margin: 8px !important;
+  }
+
+  /* Naver/Kakao 컨트롤도 모바일에서 아래로 */
+  #map > div[style*="position: absolute"] {
+    /* 일반적인 absolute 컨트롤 push */
   }
 }
 
