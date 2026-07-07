@@ -1431,7 +1431,13 @@ function fitInitialView() {
   }
   if (mapProvider === "naver" && map) {
     const nv = window.naver?.maps;
-    if (nv) {
+    const mapEl = document.getElementById('map');
+    if (nv && mapEl) {
+      const w = mapEl.offsetWidth;
+      const h = mapEl.offsetHeight;
+      if (w > 0 && h > 0) {
+        map.setSize(new nv.Size(w, h));
+      }
       map.setCenter(new nv.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng));
       map.setZoom(LEAFLET_OFFICE_ZOOM);
     }
@@ -1448,10 +1454,16 @@ function setupMapResize() {
   window.addEventListener("resize", () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
+      const mapEl = document.getElementById('map');
       if (mapProvider === "kakao" && map) {
         relayoutKakaoMap(map);
-      } else if (mapProvider === "naver" && map) {
-        // Naver handles resize automatically; nudge center to refresh
+      } else if (mapProvider === "naver" && map && mapEl) {
+        // Properly resize Naver map when container size changes
+        const w = mapEl.offsetWidth;
+        const h = mapEl.offsetHeight;
+        if (w > 0 && h > 0) {
+          map.setSize(new naver.maps.Size(w, h));
+        }
         map.setCenter(map.getCenter());
       } else if (map?.invalidateSize) {
         map.invalidateSize();
@@ -1619,6 +1631,17 @@ async function initNaverMap(clientId) {
     },
     scaleControl: true,
   });
+
+  // Force initial size immediately after creation (prevents blank/partial map if container
+  // size was still growing during waitForMapContainer)
+  const initMapEl = document.getElementById("map");
+  if (initMapEl) {
+    const w = initMapEl.offsetWidth;
+    const h = initMapEl.offsetHeight;
+    if (w > 0 && h > 0) {
+      map.setSize(new naverMaps.Size(w, h));
+    }
+  }
 
   // Desktop and mobile: keep map type (일반/위성) at top-right,
   // zoom at bottom-right but lifted slightly on desktop to avoid scale overlap.
