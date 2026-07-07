@@ -1648,9 +1648,9 @@ async function initNaverMap(clientId) {
             // Mobile: push zoom quite low to separate from top controls
             ctrl.style.bottom = '120px';
           } else {
-            // Desktop/web: lift zoom slightly up from bottom to clear the scale bar (배율)
-            // "살짝만 위로" as requested
-            ctrl.style.bottom = '32px';
+            // Desktop/web: lift zoom a bit more from the very bottom so it clears the scale bar (배율 표시)
+            // "살짝만 위로" — reduced from 32px to 20px
+            ctrl.style.bottom = '20px';
           }
           ctrl.style.top = 'auto';
           ctrl.style.right = '8px';
