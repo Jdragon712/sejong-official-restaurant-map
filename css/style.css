@@ -1085,9 +1085,10 @@ body {
   background: var(--surface-solid);
 }
 
-/* Naver Maps mobile control fixes: map type (일반/위성) top-right, zoom bottom-right */
+/* Naver Maps control fixes: map type (일반/위성) top-right, zoom bottom-right.
+   Use fairly specific selectors + size-ish hints to avoid hitting tile containers. */
 @media (max-width: 768px) {
-  /* Keep map type at top-right (like desktop) */
+  /* Keep map type at top-right */
   #map > div > div[style*="position: absolute"][style*="top"][style*="right"] {
     top: 8px !important;
     right: 8px !important;
@@ -1095,7 +1096,7 @@ body {
     bottom: auto !important;
   }
 
-  /* Push zoom control lower on the right */
+  /* Push zoom control lower on the right (away from top controls) */
   #map > div > div[style*="position: absolute"][style*="right"] {
     bottom: 120px !important;
     top: auto !important;
@@ -1106,6 +1107,16 @@ body {
   #map [class*="zoom"], #map [class*="maptype"] {
     transform: scale(0.9);
     transform-origin: top right;
+  }
+}
+
+/* Desktop/web: lift +/- zoom buttons slightly so they don't overlap the scale bar (배율 표시).
+   Matches user's "살짝만 위로" request. */
+@media (min-width: 769px) {
+  #map > div > div[style*="position: absolute"][style*="right"] {
+    bottom: 50px !important;
+    top: auto !important;
+    right: 8px !important;
   }
 }
 
