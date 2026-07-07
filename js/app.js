@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260708b";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260708b";
+} from "./map-kakao.js?v=20260708c";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260708c";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260708b";
+} from "./map-overlap-stack.js?v=20260708c";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -1651,11 +1651,7 @@ async function initNaverMap(clientId) {
     mapTypeControlOptions: {
       position: naverMaps.Position.TOP_RIGHT,
     },
-    zoomControl: true,
-    zoomControlOptions: {
-      position: naverMaps.Position.RIGHT_BOTTOM,
-      style: naverMaps.ZoomControlStyle.SMALL,
-    },
+    zoomControl: false,   // +/- 버튼 제거 (사용자 요청). 마우스 휠 / 핀치 / 더블클릭으로 확대/축소 가능
     scaleControl: true,
   });
 
@@ -1670,58 +1666,36 @@ async function initNaverMap(clientId) {
     }
   };
 
-  // Robust control positioning.
-  // Naver injects mapType (top-right) and zoom (we want bottom-right).
-  // Previous broad text/size checks + CSS sometimes caused side-by-side or overlap (maptype + zoom at same level).
-  function adjustNaverControls() {
+  // Map type control (일반/위성) 위치 보정
+  // zoomControl은 false로 제거했으므로 map type만 정리
+  function adjustMapTypeControl() {
     const el = document.getElementById('map');
-    if (!el || !map) return;
-    const isMobile = window.innerWidth <= 768;
+    if (!el) return;
 
     const candidates = Array.from(el.querySelectorAll('div[style*="position: absolute"]'));
     candidates.forEach((ctrl) => {
       const ww = ctrl.offsetWidth || 0;
       const hh = ctrl.offsetHeight || 0;
-      // Very small UI controls only
       if (ww < 12 || ww > 240 || hh < 12 || hh > 180) return;
 
       const txt = (ctrl.innerText || ctrl.textContent || '').trim();
-
-      // Also inspect children — Naver zoom +/− are often in inner spans/buttons, wrapper text may be empty
-      let hasZoomSymbol = txt.includes('+') || txt.includes('-') || txt.includes('＋') || txt.includes('－');
-      if (!hasZoomSymbol) {
-        ctrl.querySelectorAll('div, button, span, a').forEach((kid) => {
-          const kt = (kid.innerText || kid.textContent || '').trim();
-          if (kt === '+' || kt === '-' || kt.includes('+') || kt.includes('-')) {
-            hasZoomSymbol = true;
-          }
-        });
-      }
-
       const isMapType = /일반|위성|지도/.test(txt);
 
-      try {
-        if (isMapType) {
-          // Map type stays top-right
+      if (isMapType) {
+        try {
           ctrl.style.setProperty('top', '8px', 'important');
           ctrl.style.setProperty('right', '8px', 'important');
           ctrl.style.setProperty('left', 'auto', 'important');
           ctrl.style.setProperty('bottom', 'auto', 'important');
-        } else if (hasZoomSymbol) {
-          // Zoom must go to bottom-right, lifted just enough on desktop to clear scale bar
-          const bottomVal = isMobile ? '120px' : '55px';
-          ctrl.style.setProperty('bottom', bottomVal, 'important');
-          ctrl.style.setProperty('top', 'auto', 'important');
-          ctrl.style.setProperty('right', '8px', 'important');
-        }
-      } catch (_) {}
+        } catch (_) {}
+      }
     });
   }
 
-  // Run size + control adjust multiple times (controls can appear after tiles, fonts, etc.)
+  // Run size + map type adjust multiple times
   const runAdjusts = () => {
     applySize();
-    adjustNaverControls();
+    adjustMapTypeControl();
   };
 
   requestAnimationFrame(runAdjusts);
@@ -1732,10 +1706,10 @@ async function initNaverMap(clientId) {
   setTimeout(runAdjusts, 850);
   setTimeout(runAdjusts, 1300);
 
-  // Re-adjust when Naver map resizes or idles (prevents drift/overlap after layout changes)
+  // Re-adjust on resize/idle (map type 위치 유지)
   try {
     if (window.naver && window.naver.maps && window.naver.maps.Event) {
-      const reAdjust = () => setTimeout(adjustNaverControls, 60);
+      const reAdjust = () => setTimeout(adjustMapTypeControl, 60);
       naver.maps.Event.addListener(map, 'resize', reAdjust);
       naver.maps.Event.addListener(map, 'idle', reAdjust);
     }
