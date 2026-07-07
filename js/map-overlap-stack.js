@@ -3,7 +3,7 @@
  */
 
 export const OVERLAP_RADIUS_M = 30;
-export const OVERLAP_VISUAL_RADIUS_M = 25; // increased for better mobile grouping (was 10m, too small on screen)
+export const OVERLAP_VISUAL_RADIUS_M = 40; // further increased for mobile visual overlap prevention (icons ~20-30px take space)
 
 export function haversineDistanceM(a, b) {
   const R = 6371000;
