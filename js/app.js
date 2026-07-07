@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260707i";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260707i";
+} from "./map-kakao.js?v=20260708a";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260708a";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260707i";
+} from "./map-overlap-stack.js?v=20260708a";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -1433,13 +1433,23 @@ function fitInitialView() {
     const nv = window.naver?.maps;
     const mapEl = document.getElementById('map');
     if (nv && mapEl) {
-      const w = mapEl.offsetWidth;
-      const h = mapEl.offsetHeight;
-      if (w > 0 && h > 0) {
-        map.setSize(new nv.Size(w, h));
+      const w = mapEl.offsetWidth || window.innerWidth;
+      const h = mapEl.offsetHeight || Math.floor(window.innerHeight * 0.8);
+      if (w > 50 && h > 200) {
+        try { map.setSize(new nv.Size(w, h)); } catch (_) {}
       }
+      // Re-apply center/zoom after size to ensure correct projection (prevents marker shift)
       map.setCenter(new nv.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng));
       map.setZoom(LEAFLET_OFFICE_ZOOM);
+      // one more size pulse shortly after
+      setTimeout(() => {
+        if (map && mapEl) {
+          const ww = mapEl.offsetWidth, hh = mapEl.offsetHeight;
+          if (ww > 50 && hh > 200) {
+            try { map.setSize(new nv.Size(ww, hh)); } catch (_) {}
+          }
+        }
+      }, 80);
     }
     return;
   }
@@ -1459,10 +1469,10 @@ function setupMapResize() {
         relayoutKakaoMap(map);
       } else if (mapProvider === "naver" && map && mapEl) {
         // Properly resize Naver map when container size changes
-        const w = mapEl.offsetWidth;
-        const h = mapEl.offsetHeight;
-        if (w > 0 && h > 0) {
-          map.setSize(new naver.maps.Size(w, h));
+        const w = mapEl.offsetWidth || window.innerWidth;
+        const h = mapEl.offsetHeight || Math.floor(window.innerHeight * 0.8);
+        if (w > 50 && h > 200) {
+          try { map.setSize(new naver.maps.Size(w, h)); } catch (_) {}
         }
         map.setCenter(map.getCenter());
       } else if (map?.invalidateSize) {
@@ -1614,7 +1624,24 @@ function addMobileMapTypeToggle(map, naverMaps) {
 
 async function initNaverMap(clientId) {
   await waitForWindowReady();
-  await waitForMapContainer("map");
+  const mapEl = await waitForMapContainer("map");
+
+  // Extra guard: if flex/grid hasn't given full height yet, force an explicit height
+  // before SDK map creation. This prevents the classic "white top + partial tiles + shifted markers".
+  let w = mapEl.offsetWidth;
+  let h = mapEl.offsetHeight;
+  if (h < 400) {
+    const header = document.querySelector('.site-header');
+    const footer = document.querySelector('.site-footer');
+    const headerH = header ? header.offsetHeight : 72;
+    const footerH = footer ? footer.offsetHeight : 80;
+    h = Math.max(480, Math.floor(window.innerHeight - headerH - footerH - 8));
+    mapEl.style.height = h + 'px';
+    // re-measure after explicit set
+    w = mapEl.offsetWidth;
+    h = mapEl.offsetHeight;
+  }
+
   const naverMaps = await loadNaverSdk(clientId);
   mapProvider = "naver";
   map = new naverMaps.Map("map", {
@@ -1632,47 +1659,60 @@ async function initNaverMap(clientId) {
     scaleControl: true,
   });
 
-  // Force initial size immediately after creation (prevents blank/partial map if container
-  // size was still growing during waitForMapContainer)
-  const initMapEl = document.getElementById("map");
-  if (initMapEl) {
-    const w = initMapEl.offsetWidth;
-    const h = initMapEl.offsetHeight;
-    if (w > 0 && h > 0) {
-      map.setSize(new naverMaps.Size(w, h));
+  const applySize = () => {
+    if (!map || !mapEl) return;
+    const ww = mapEl.offsetWidth || w || window.innerWidth;
+    const hh = mapEl.offsetHeight || h || Math.floor(window.innerHeight * 0.75);
+    if (ww > 50 && hh > 200) {
+      try {
+        map.setSize(new naverMaps.Size(ww, hh));
+      } catch (_) {}
     }
-  }
+  };
+
+  // Force size immediately (prevents blank/partial + marker shift)
+  applySize();
+
+  // Multiple follow-ups in the first second — critical because Naver tiles + internal layout
+  // often settle after first paint / font / other DOM.
+  requestAnimationFrame(applySize);
+  setTimeout(applySize, 30);
+  setTimeout(applySize, 80);
+  setTimeout(applySize, 160);
+  setTimeout(applySize, 320);
+  setTimeout(applySize, 550);
+  setTimeout(applySize, 900);
 
   // Desktop and mobile: keep map type (일반/위성) at top-right,
   // zoom at bottom-right but lifted slightly on desktop to avoid scale overlap.
+  // Use *strict* size guard so we never mutate large tile containers or other absolute divs.
   setTimeout(() => {
     try {
-      const mapEl = document.getElementById('map');
-      if (!mapEl) return;
+      const el = document.getElementById('map');
+      if (!el) return;
 
-      const controls = mapEl.querySelectorAll('div[style*="position: absolute"]');
+      const controls = el.querySelectorAll('div[style*="position: absolute"]');
       const isMobile = window.innerWidth <= 768;
 
       controls.forEach((ctrl) => {
         const txt = (ctrl.textContent || '').trim();
-        const styleStr = ctrl.getAttribute('style') || '';
+        const ww = ctrl.offsetWidth || 0;
+        const hh = ctrl.offsetHeight || 0;
+        const isLikelyControl = ww > 10 && ww < 220 && hh > 10 && hh < 170;
 
-        const isMapType = txt.includes('일반') || txt.includes('위성') || txt.includes('지도');
-        const isZoom = txt.includes('+') || txt.includes('-') || /height:\s*\d+px/.test(styleStr);
+        const isMapType = isLikelyControl && (txt.includes('일반') || txt.includes('위성') || txt.includes('지도'));
+        const hasZoomGlyph = txt.includes('+') || txt.includes('-');
+        const isZoom = isLikelyControl && hasZoomGlyph;
 
         if (isMapType) {
-          // Always keep map type at top-right (consistent with web)
           ctrl.style.top = '8px';
           ctrl.style.right = '8px';
           ctrl.style.left = 'auto';
           ctrl.style.bottom = 'auto';
         } else if (isZoom) {
           if (isMobile) {
-            // Mobile: push zoom quite low to separate from top controls
             ctrl.style.bottom = '120px';
           } else {
-            // Desktop/web: lift the zoom controls a little higher to clear the scale bar (배율 표시)
-            // "살짝만 위로" from the previous 40px
             ctrl.style.bottom = '50px';
           }
           ctrl.style.top = 'auto';
@@ -1680,7 +1720,13 @@ async function initNaverMap(clientId) {
         }
       });
     } catch (e) {}
-  }, 500);
+  }, 520);
+
+  // Final safety net after full window load
+  window.addEventListener('load', () => {
+    setTimeout(applySize, 10);
+    setTimeout(applySize, 120);
+  }, { once: true });
 }
 
 function closeOpenPopups() {
