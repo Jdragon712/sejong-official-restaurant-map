@@ -1605,11 +1605,10 @@ async function initNaverMap(clientId) {
   await waitForMapContainer("map");
   const naverMaps = await loadNaverSdk(clientId);
   mapProvider = "naver";
-  const isMobile = window.innerWidth <= 768;
   map = new naverMaps.Map("map", {
     center: new naverMaps.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng),
     zoom: 12,
-    mapTypeControl: !isMobile,   // disable default on mobile to avoid overlap with zoom
+    mapTypeControl: true,
     mapTypeControlOptions: {
       position: naverMaps.Position.TOP_RIGHT,
     },
@@ -1621,26 +1620,44 @@ async function initNaverMap(clientId) {
     scaleControl: true,
   });
 
-  if (isMobile) {
-    addMobileMapTypeToggle(map, naverMaps);
+  // Desktop and mobile: keep map type (일반/위성) at top-right,
+  // zoom at bottom-right but lifted slightly on desktop to avoid scale overlap.
+  setTimeout(() => {
+    try {
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
 
-    // Push Naver zoom control further down on mobile so it doesn't sit next to the top-right map type toggle
-    setTimeout(() => {
-      try {
-        const mapEl = document.getElementById('map');
-        if (!mapEl) return;
-        const zoom = mapEl.querySelector('div[style*="position: absolute"][style*="right"]');
-        if (zoom && (zoom.textContent.includes('+') || zoom.textContent.includes('-'))) {
-          zoom.style.bottom = '85px';
-          zoom.style.right = '8px';
-          zoom.style.top = 'auto';
+      const controls = mapEl.querySelectorAll('div[style*="position: absolute"]');
+      const isMobile = window.innerWidth <= 768;
+
+      controls.forEach((ctrl) => {
+        const txt = (ctrl.textContent || '').trim();
+        const styleStr = ctrl.getAttribute('style') || '';
+
+        const isMapType = txt.includes('일반') || txt.includes('위성') || txt.includes('지도');
+        const isZoom = txt.includes('+') || txt.includes('-') || /height:\s*\d+px/.test(styleStr);
+
+        if (isMapType) {
+          // Always keep map type at top-right (consistent with web)
+          ctrl.style.top = '8px';
+          ctrl.style.right = '8px';
+          ctrl.style.left = 'auto';
+          ctrl.style.bottom = 'auto';
+        } else if (isZoom) {
+          if (isMobile) {
+            // Mobile: push zoom quite low to separate from top controls
+            ctrl.style.bottom = '120px';
+          } else {
+            // Desktop/web: lift zoom slightly up from bottom to clear the scale bar (배율)
+            // "살짝만 위로" as requested
+            ctrl.style.bottom = '32px';
+          }
+          ctrl.style.top = 'auto';
+          ctrl.style.right = '8px';
         }
-      } catch (e) {}
-    }, 450);
-  }
-
-  // (mobile map type toggle is handled by custom addMobileMapTypeToggle above)
-  // No need for the old DOM hack now that we use a controlled custom toggle on mobile.
+      });
+    } catch (e) {}
+  }, 500);
 }
 
 function closeOpenPopups() {
