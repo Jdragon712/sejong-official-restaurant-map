@@ -801,8 +801,7 @@ function findMapMarker(mapTarget) {
 
 function getMarkerStyle(r) {
   if (r._isStackMarker) {
-    const count = r._stackMembers?.length || 1;
-    return { tier: "rainbow", isStack: true, rank: null, color: null, zIndex: 8, count };
+    return { tier: "rainbow", isStack: true, rank: null, color: null, zIndex: 8 };
   }
   const info = getVisitRankInfo(r);
   const tier = info?.tier ?? 5;
@@ -1549,12 +1548,13 @@ async function initNaverMap(clientId) {
   await waitForMapContainer("map");
   const naverMaps = await loadNaverSdk(clientId);
   mapProvider = "naver";
+  const isMobile = window.innerWidth <= 768;
   map = new naverMaps.Map("map", {
     center: new naverMaps.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng),
     zoom: 12,
     mapTypeControl: true,
     mapTypeControlOptions: {
-      position: naverMaps.Position.TOP_RIGHT,
+      position: isMobile ? naverMaps.Position.TOP_LEFT : naverMaps.Position.TOP_RIGHT,
     },
     zoomControl: true,
     zoomControlOptions: {
@@ -1564,34 +1564,37 @@ async function initNaverMap(clientId) {
     scaleControl: true,
   });
 
-  // Mobile-friendly zoom control positioning: move to bottom-right, a bit lower
-  // to avoid overlap with category pills, Naver badge, drawer, or attribution.
+  // Mobile-friendly positioning: map type (일반/위성) to top-left, zoom lower bottom-right
+  // to prevent them overlapping each other or bottom UI on small screens.
   setTimeout(() => {
     try {
       const mapEl = document.getElementById('map');
       if (!mapEl) return;
-      const controls = mapEl.querySelectorAll(':scope > div');
+      const controls = mapEl.querySelectorAll(':scope > div[style*="position: absolute"]');
+      const isMobile = window.innerWidth <= 768;
+
       controls.forEach((ctrl) => {
-        const style = ctrl.getAttribute('style') || '';
-        if (style.includes('position: absolute') && style.includes('right:')) {
-          if (window.innerWidth <= 768) {
-            const h = ctrl.offsetHeight || 0;
-            if (h > 35) {
-              // Zoom control (taller) - lower it a bit
-              ctrl.style.bottom = '58px';
-              ctrl.style.top = 'auto';
-              ctrl.style.right = '8px';
-            } else {
-              // Scale / small controls - keep very bottom
-              ctrl.style.bottom = '8px';
-              ctrl.style.top = 'auto';
-              ctrl.style.right = '8px';
-            }
+        const styleStr = ctrl.getAttribute('style') || '';
+        const hasRight = styleStr.includes('right:');
+        const hasTop = styleStr.includes('top:');
+        const h = ctrl.offsetHeight || 0;
+
+        if (isMobile) {
+          if (hasRight && h > 30) {
+            // Likely zoom control - push lower
+            ctrl.style.bottom = '65px';
+            ctrl.style.top = 'auto';
+            ctrl.style.right = '8px';
+          } else if (hasTop && hasRight) {
+            // Likely map type control (일반/위성) - move to top left
+            ctrl.style.top = '8px';
+            ctrl.style.left = '8px';
+            ctrl.style.right = 'auto';
           }
         }
       });
     } catch (e) {}
-  }, 350);
+  }, 400);
 }
 
 function closeOpenPopups() {
@@ -1835,14 +1838,8 @@ function addLeafletMarkers(markerItems) {
     const style = getMarkerStyle(r);
     const pinHtml = dropletPinHtml(style);
     const isStack = !!style.isStack;
-    // 모바일에서 더 작게
-    const isMobile = window.innerWidth <= 600;
-    let iconW = isStack ? 36 : 32;
-    let iconH = isStack ? 44 : 40;
-    if (isMobile) {
-      iconW = isStack ? 22 : 20;
-      iconH = isStack ? 28 : 26;
-    }
+    const iconW = isStack ? 36 : 32;
+    const iconH = isStack ? 44 : 40;
     const icon = L.divIcon({
       className: "pin leaflet-droplet-icon",
       html: pinHtml,
@@ -1959,16 +1956,13 @@ function addNaverMarkers(items) {
       (match, extraClasses) => `class="map-pin-wrap${extraClasses}" data-rid="${ridForData}"`
     );
 
-    const isMobileNaver = window.innerWidth <= 600;
-    const anchorX = isMobileNaver ? 12 : 16;
-    const anchorY = isMobileNaver ? 30 : 38;
     const marker = new naverMaps.Marker({
       position: new naverMaps.LatLng(r.lat, r.lng),
       map: map,
       title: r.name || "",
       icon: {
         content: pinHtml,
-        anchor: new naverMaps.Point(anchorX, anchorY),
+        anchor: new naverMaps.Point(16, 38),
       },
     });
 
