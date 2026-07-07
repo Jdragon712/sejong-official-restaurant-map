@@ -950,7 +950,8 @@
       "address_road": "세종특별자치시 절재로 194, 3층 315,316호 (어진동, 중앙타운)",
       "address_jibun": "세종특별자치시 어진동 547 중앙타운 315,316호",
       "category_app": "일반음식점",
-      "match_status": "exact"
+      "match_status": "exact",
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:5bda93ed1872",
@@ -1171,7 +1172,8 @@
       "address_road": "세종 절재로 194 315호 (어진동,중앙타운)",
       "category_app": "일반음식점/한식",
       "phone": "044)865-6030",
-      "match_status": "exact"
+      "match_status": "exact",
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:81dc2ef1e2d8",
@@ -3957,7 +3959,8 @@
       "address_road": "세종 절재로 194 315호 (어진동,중앙타운)",
       "category_app": "일반음식점/한식",
       "phone": "044)865-6030",
-      "match_status": "exact"
+      "match_status": "exact",
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:4917cc7caebb",
@@ -20540,7 +20543,8 @@
       "address_road": "세종특별자치시 절재로 194, 3층 315,316호 (어진동, 중앙타운)",
       "address_jibun": "세종특별자치시 어진동 547 중앙타운 315,316호",
       "category_app": "일반음식점",
-      "match_status": "exact"
+      "match_status": "exact",
+      "geocode_place_name": "황가원"
     },
     {
       "restaurant_id": "venue:33f2eb0c0c18",
