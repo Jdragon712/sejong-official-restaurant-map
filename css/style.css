@@ -1067,6 +1067,19 @@ body {
   min-width: 210px;
   max-width: 292px;
   font-family: var(--font);
+
+/* Naver Maps zoom controls positioning */
+#map > div > div[style*="position: absolute"][style*="right"] {
+  right: 8px !important;
+}
+
+@media (max-width: 768px) {
+  /* Move zoom to bottom right on mobile, a bit lower to avoid overlap */
+  #map > div > div[style*="position: absolute"][style*="right"] {
+    bottom: 55px !important;
+    top: auto !important;
+  }
+}
   color: var(--text);
   background: var(--surface-solid);
 }
