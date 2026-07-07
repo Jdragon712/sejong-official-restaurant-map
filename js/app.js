@@ -1114,12 +1114,12 @@ function kakaoMapLinkHtml(r, className) {
   return `<a ${attrs}>카카오맵에서 열기</a>`;
 }
 
-/** Naver Maps search query — 식당 이름 중심으로 검색.
- * 세종시 네이버 지도 특성: 식당이름만 정확해도 위치(세종) 기반으로 주변부터 검색됨.
- * 단, 이름만으로 안 나오는 경우(은주식당 등 조치원/소규모)는 주소 힌트(읍/길) 추가.
+/** Naver Maps search query — 식당 이름 중심으로 검색 (네이버 예약/서비스 이용 목적).
+ * 고티어(1~3티어) 우선으로 정확한 상호명이 검색되도록 이름 우선.
+ * 위치 bias 때문에 세종은 이름만으로도 잘 됨. 주소 fallback은 최소한으로.
  */
 function naverSearchQueryForVenue(r) {
-  // Prefer geocode_place_name (from Kakao POI) as it is often the name Naver also recognizes.
+  // geocode_place_name (Kakao POI)이 네이버에서도 잘 먹히는 경우가 많음
   let base = cleanDisplayField(r.geocode_place_name);
   if (!base) {
     const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || cleanDisplayField(r.name) || "";
@@ -1131,6 +1131,7 @@ function naverSearchQueryForVenue(r) {
   }
 
   if (!base) {
+    // 이름이 전혀 없으면 주소로 최소 fallback
     const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
     const short = road ? road.split(",")[0].trim() : "";
     return short ? `세종 ${short}` : "";
@@ -1138,18 +1139,23 @@ function naverSearchQueryForVenue(r) {
 
   base = normalizeRestaurantName(base);
 
+  // 기본은 상호명 중심. 세종 위치 bias 활용
   let q = /세종/i.test(base) ? base : `세종 ${base}`;
 
-  // 이름만으로 검색 안 되는 경우(은주식당 등) → Naver는 이름 검색이 약하니 주소 중심으로
+  // 고티어( high bucket )는 이름 정확히 유지. 낮은 티어거나 극단적 hard case만 힌트 추가
+  const isHighTier = (r.visit_rank_bucket === 'high') || ((r.visit_count_total || 0) >= 50);
   const road = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
-  const isHardCase = base.length <= 6 || road.includes('조치원') || road.includes('침천');
-  if (isHardCase && road) {
-    // 주소로 직접 검색하면 위치는 정확히 나옴 (비즈니스 핀이 없어도 지도 중심 이동)
-    const shortRoad = road.replace(/세종특별자치시\s*/, '').split(',')[0].trim();
-    if (shortRoad) {
-      q = shortRoad;   // e.g. "조치원읍 침천길 15"
-    } else if (!q.includes('조치원')) {
-      q = `${base} 조치원읍`;
+  const needsHint = !isHighTier && (base.length <= 5 || road.includes('조치원') || road.includes('침천'));
+
+  if (needsHint && road) {
+    let hint = '';
+    if (road.includes('조치원읍')) hint = '조치원읍';
+    else {
+      const m = road.match(/([가-힣]+읍|[가-힣]+(길|로))\s*\d*/);
+      if (m) hint = m[1];
+    }
+    if (hint && !q.includes(hint)) {
+      q = `${base} ${hint}`;   // 이름은 절대 버리지 말고 추가만
     }
   }
 
