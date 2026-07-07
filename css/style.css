@@ -1085,12 +1085,10 @@ body {
   background: var(--surface-solid);
 }
 
-/* Naver Maps control positioning is now primarily handled in JS (adjustNaverControls)
-   with strict size checks + child glyph search + !important setProperty.
-   These CSS rules are secondary / fallback only and kept narrow to avoid fighting
-   the map type vs zoom (which was causing the side-by-side overlap in the screenshot). */
+/* Naver map type control (일반/위성) 위치 보강용.
+   zoomControl은 제거했으므로 zoom 관련 규칙은 삭제. */
 @media (max-width: 768px) {
-  /* Map type (일반/위성) top-right */
+  /* Map type top-right */
   #map > div > div[style*="position: absolute"][style*="top"][style*="right"] {
     top: 8px !important;
     right: 8px !important;
@@ -1098,26 +1096,19 @@ body {
     bottom: auto !important;
   }
 
-  /* Mobile zoom lower (only elements that look like they don't carry "top") */
-  #map > div > div[style*="position: absolute"][style*="right"]:not([style*="top"]) {
-    bottom: 120px !important;
-    top: auto !important;
-    right: 8px !important;
-  }
-
-  #map [class*="zoom"], #map [class*="maptype"] {
+  #map [class*="maptype"] {
     transform: scale(0.92);
     transform-origin: top right;
   }
 }
 
-/* Desktop: we mostly rely on JS now (bottom ~55px for zoom to clear scale).
-   Narrow selector to reduce chance of moving the map type control. */
+/* Desktop map type 보강 (필요시) */
 @media (min-width: 769px) {
-  #map > div > div[style*="position: absolute"][style*="right"]:not([style*="top"]) {
-    bottom: 55px !important;
-    top: auto !important;
+  #map > div > div[style*="position: absolute"][style*="top"][style*="right"] {
+    top: 8px !important;
     right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
   }
 }
 
