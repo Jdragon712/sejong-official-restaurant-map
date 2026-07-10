@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260708c";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260708c";
+} from "./map-kakao.js?v=20260710a";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260710a";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260708c";
+} from "./map-overlap-stack.js?v=20260710a";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -414,7 +414,14 @@ function markerOverlapKey(r) {
 function venueClusterKey(r) {
   if (!r || r.lat == null || r.lng == null) return null;
   const name = normalizeClusterName(r);
-  const addr = normalizeClusterAddress(r);
+  let addr = normalizeClusterAddress(r);
+  // When we have a verified POI (geocode_place_name), use building-level addr
+  // so same shop reported with slightly different floor/unit still clusters (e.g. 모리해물장)
+  const poi = mapPoiLabel(r);
+  if (poi) {
+    const bld = buildingAddressKey(r);
+    if (bld) addr = bld;
+  }
   if (!name || !addr) return null;
   return `vn:${name}::${addr}`;
 }
@@ -1628,80 +1635,7 @@ function loadNaverSdk(clientId, timeoutMs = 8000) {
   });
 }
 
-function addNaverStyleMapTypeTabs(map, naverMaps) {
-  const mapEl = document.getElementById('map');
-  if (!mapEl || !naverMaps) return;
 
-  // Remove any previous custom tabs
-  const existing = mapEl.querySelector('.naver-maptype-tabs');
-  if (existing) existing.remove();
-
-  const tabs = document.createElement('div');
-  tabs.className = 'naver-maptype-tabs';
-  tabs.innerHTML = `
-    <div class="naver-maptype-tab active" data-type="normal">
-      <div class="tab-preview"></div>
-      <div class="tab-label">일반지도</div>
-    </div>
-    <div class="naver-maptype-tab" data-type="satellite">
-      <div class="tab-preview"></div>
-      <div class="tab-label">위성지도</div>
-    </div>
-    <div class="naver-maptype-tab" data-type="terrain">
-      <div class="tab-preview"></div>
-      <div class="tab-label">지형지도</div>
-    </div>
-  `;
-
-  mapEl.appendChild(tabs);
-
-  const setActive = (type) => {
-    tabs.querySelectorAll('.naver-maptype-tab').forEach((tab) => {
-      tab.classList.toggle('active', tab.dataset.type === type);
-    });
-  };
-
-  tabs.addEventListener('click', (e) => {
-    const tab = e.target.closest('.naver-maptype-tab');
-    if (!tab) return;
-
-    const type = tab.dataset.type;
-    let mapTypeId;
-
-    if (type === 'normal') {
-      mapTypeId = naverMaps.MapTypeId.NORMAL;
-    } else if (type === 'satellite') {
-      mapTypeId = naverMaps.MapTypeId.SATELLITE;
-    } else if (type === 'terrain') {
-      mapTypeId = naverMaps.MapTypeId.TERRAIN;
-    }
-
-    if (mapTypeId) {
-      map.setMapTypeId(mapTypeId);
-      setActive(type);
-    }
-  });
-
-  // Set initial active based on current map type
-  const current = map.getMapTypeId ? map.getMapTypeId() : naverMaps.MapTypeId.NORMAL;
-  let initialType = 'normal';
-  if (current === naverMaps.MapTypeId.SATELLITE) initialType = 'satellite';
-  else if (current === naverMaps.MapTypeId.TERRAIN) initialType = 'terrain';
-  setActive(initialType);
-
-  // Keep in sync if map type changes externally
-  if (naverMaps.Event) {
-    naverMaps.Event.addListener(map, 'maptype_changed', () => {
-      const id = map.getMapTypeId();
-      let t = 'normal';
-      if (id === naverMaps.MapTypeId.SATELLITE) t = 'satellite';
-      else if (id === naverMaps.MapTypeId.TERRAIN) t = 'terrain';
-      setActive(t);
-    });
-  }
-
-  return tabs;
-}
 
 async function initNaverMap(clientId) {
   await waitForWindowReady();
@@ -1728,7 +1662,10 @@ async function initNaverMap(clientId) {
   map = new naverMaps.Map("map", {
     center: new naverMaps.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng),
     zoom: 12,
-    mapTypeControl: false,  // 네이티브 대신 커스텀 세 개 탭(일반지도/위성지도/지형지도) 사용
+    mapTypeControl: true,
+    mapTypeControlOptions: {
+      position: naverMaps.Position.TOP_RIGHT,
+    },
     zoomControl: true,
     zoomControlOptions: {
       position: naverMaps.Position.RIGHT_BOTTOM,
@@ -1799,12 +1736,6 @@ async function initNaverMap(clientId) {
 
   // Final safety after full load
   window.addEventListener('load', () => setTimeout(runAdjusts, 80), { once: true });
-
-  // Add custom Naver-style top map type tabs (일반지도 / 위성지도 / 지형지도)
-  // This is to test matching the real Naver Maps UI the user showed.
-  setTimeout(() => {
-    addNaverStyleMapTypeTabs(map, naverMaps);
-  }, 350);
 }
 
 function closeOpenPopups() {
