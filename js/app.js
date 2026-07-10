@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260710b";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260710b";
+} from "./map-kakao.js?v=20260710c";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260710c";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260710b";
+} from "./map-overlap-stack.js?v=20260710c";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
