@@ -211,7 +211,7 @@
       "last_visit_date": "2026-05-29",
       "distinct_depts": 13,
       "match_status": "unmatched",
-      "geocode_place_name": "송도갈비 세종점"
+      "geocode_place_name": "(주)신화케이푸드"
     },
     {
       "restaurant_id": "venue:b205b202bebb",
@@ -2601,9 +2601,9 @@
     },
     {
       "restaurant_id": "venue:44617643b03c",
-      "name": "세종송도갈비",
+      "name": "송도 갈비 세종점",
       "visit_count_total": 16,
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "송도 갈비 세종점",
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-05-20",
       "distinct_depts": 4,
@@ -6600,7 +6600,7 @@
     },
     {
       "restaurant_id": "venue:f0b892be8d2a",
-      "name": "송도갈비",
+      "name": "송도 갈비 세종점",
       "visit_count_total": 6,
       "geocode_place_name": "송도갈비 세종점",
       "visit_rank_bucket": "high",
