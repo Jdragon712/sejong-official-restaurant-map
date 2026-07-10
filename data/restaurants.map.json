@@ -268,12 +268,12 @@
       "last_visit_date": "2026-05-29",
       "distinct_depts": 13,
       "match_status": "unmatched",
-      "lat": 36.504826002938,
-      "lng": 127.27075210161968,
-      "geocode_address": "세종특별자치시 도움8로 81",
-      "geocode_provider": "expense_name_peer",
-      "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점",
-      "geocode_place_name": "송도갈비 세종점"
+      "lat": 36.4950624846328,
+      "lng": 127.258791047519,
+      "geocode_address": "세종특별자치시 다솜로 50",
+      "geocode_provider": "kakao_kw",
+      "geocode_place_name": "송도갈비 세종점",
+      "address_road": "세종특별자치시 다솜로 50, 상가2동 1~2층 101, 201호 (어진동, 한뜰마을6단지)"
     },
     {
       "restaurant_id": "venue:b205b202bebb",
@@ -306,7 +306,7 @@
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점",
-      "geocode_place_name": "한화커넥트 세종점"
+      "geocode_place_name": ""
     },
     {
       "restaurant_id": "venue:c3bbbe70db14",
