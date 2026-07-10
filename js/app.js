@@ -39,7 +39,24 @@ const RETAIL_VENDOR_RE =
 const IMART_RETAIL_RE =
   /이마트\s*24|이마트24|이마트\s*에브리데이|이마트에브리데이|^(?:㈜|\(주\))?\s*이마트(?:\s*세종|\s*도담|$)|^이마트$/i;
 /** 인허가 없이 지명·시설명만 잡힌 업추비 상호 (선운산풍천장어 등 식당은 제외) */
-const NON_RESTAURANT_EXACT_NAMES = new Set(["운산"]);
+const NON_RESTAURANT_EXACT_NAMES = new Set(["운산", "주", "(주)", "유"]);
+
+function isBadBrandName(n) {
+  if (!n) return true;
+  const s = String(n).trim();
+  if (s.length < 2) return true;
+  const lower = s.toLowerCase();
+  if (["주", "유", "(주)", "주식회사", "㈜", "농업회사법인"].includes(lower)) return true;
+  return false;
+}
+
+/** Individual patch for problematic entries (e.g. the bad "주" entry at 도움8로 81).
+ *  This is actually "우주커피" (see Naver Maps: 우주커피 at 세종 도움8로 81 1층 A동 105호).
+ *  When name mangles to "주" (or other junk), force correct name for display + external Naver/Kakao links.
+ */
+const EXTERNAL_SEARCH_PATCH = {
+  "도움8로 81": "우주커피",
+};
 let visitCountField = "visit_count_total";
 
 function visitCount(r) {
@@ -217,7 +234,9 @@ function expenseVisitTarget(r) {
   const name = cleanDisplayField(r.name);
   const m = name.match(/[(\（]([^)）]+)[)\）]/);
   if (!m) return "";
-  return stripBranchSuffix(extractCoreName(m[1])).toLowerCase();
+  const inner = stripBranchSuffix(extractCoreName(m[1]));
+  if (isBadBrandName(inner)) return "";
+  return inner.toLowerCase();
 }
 
 function normalizedBrandKey(r) {
@@ -329,23 +348,44 @@ function permitBrandName(venue) {
     brand = brand
       .replace(/\s*(?:세종|시청|보람|나성|어진|정부청사|청사)?점\s*$/u, "")
       .trim();
-    if (brand.length >= 2) return brand;
+    if (brand.length >= 2 && !isBadBrandName(brand)) return brand;
   }
-  return cleanDisplayField(venue.name) || String(venue.name || "");
+  const fallback = cleanDisplayField(venue.name) || String(venue.name || "");
+  if (isBadBrandName(fallback)) return "";
+  return fallback;
 }
 
 /** 드로어·팝업 표시명 — 카카오 POI → 괄호 방문처 → 인허가 순 */
 function mapDisplayName(r) {
   const poi = mapPoiLabel(r);
-  if (poi) return normalizeRestaurantName(poi);
+  if (poi && !isBadBrandName(poi)) return normalizeRestaurantName(poi);
   const visitTarget = expenseVisitTarget(r);
   const brand = brandMergeKey(r);
   if (visitTarget && visitTarget !== brand && !brandsAreSimilar(visitTarget, brand)) {
     const raw = cleanDisplayField(r.name);
     const m = raw.match(/[(\（]([^)）]+)[)\）]/);
-    if (m) return normalizeRestaurantName(m[1].trim());
+    if (m) {
+      const inner = m[1].trim();
+      if (!isBadBrandName(inner)) return normalizeRestaurantName(inner);
+    }
   }
-  return normalizeRestaurantName(permitBrandName(r));
+  const pbrand = permitBrandName(r);
+  if (pbrand && !isBadBrandName(pbrand)) return normalizeRestaurantName(pbrand);
+  // Last resort: raw name if not bad
+  const rawName = cleanDisplayField(r.name);
+  if (!isBadBrandName(rawName)) return normalizeRestaurantName(rawName);
+
+  // Individual patch for display (for the "주" case etc.)
+  if (isBadBrandName(poi) || isBadBrandName(pbrand) || isBadBrandName(rawName) || ! (poi || pbrand || rawName)) {
+    const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+    for (const [key, val] of Object.entries(EXTERNAL_SEARCH_PATCH)) {
+      if (addr.includes(key)) {
+        return normalizeRestaurantName(val);
+      }
+    }
+  }
+
+  return "";
 }
 
 function brandsAreSimilar(a, b) {
@@ -659,7 +699,11 @@ function restaurantsForMapMarkers() {
     .map((r) => prepareIndividualMarkerItem(r));
   const deduped = dedupeAndMergeVenues(resolved)
     .filter((r) => visitCount(r) >= MIN_MAP_VISITS)
-    .filter((r) => !isExcludedFromMapMarkers(r));
+    .filter((r) => !isExcludedFromMapMarkers(r))
+    .filter((r) => {
+      const dn = mapDisplayName(r) || r.name || "";
+      return !isBadBrandName(dn);
+    });
 
   return mergeOverlappingMarkerItems(deduped, {
     prepareIndividual: prepareIndividualMarkerItem,
@@ -1087,10 +1131,29 @@ function displayVenueLabel(r) {
 function getBestSearchBase(r) {
   // Prefer verified POI name or permit name for accurate business page match
   let base = cleanDisplayField(r.geocode_place_name) || cleanDisplayField(r.permit_name) || cleanDisplayField(r.name) || "";
+  if (isBadBrandName(base)) {
+    base = "";
+  }
   if (!base) {
     const display = mapDisplayName(r) || mapPoiLabel(r) || brandNameFromVenue(r) || "";
     base = display.replace(/\s*\([A-Za-z][^)]*\)/g, '').trim();
   }
+  if (isBadBrandName(base)) {
+    base = "";
+  }
+
+  // Apply individual patch for known problematic entries (e.g. the bad "주" one at 도움8로 81)
+  // This ensures external Naver/Kakao links use the correct business name "우주커피"
+  if (!base || isBadBrandName(base)) {
+    const addr = cleanDisplayField(r.address_road) || cleanDisplayField(r.geocode_address) || "";
+    for (const [key, val] of Object.entries(EXTERNAL_SEARCH_PATCH)) {
+      if (addr.includes(key)) {
+        base = val;
+        break;
+      }
+    }
+  }
+
   base = base.replace(/본점|지점|본$/g, "").replace(/\s+/g, " ").trim();
 
   // Strip numeric brand prefix (e.g. 1980황가원 -> 황가원) so search matches Naver/Kakao registered name
@@ -1565,61 +1628,79 @@ function loadNaverSdk(clientId, timeoutMs = 8000) {
   });
 }
 
-function addMobileMapTypeToggle(map, naverMaps) {
+function addNaverStyleMapTypeTabs(map, naverMaps) {
   const mapEl = document.getElementById('map');
-  if (!mapEl) return;
+  if (!mapEl || !naverMaps) return;
 
-  const toggle = document.createElement('div');
-  toggle.style.cssText = `
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-    display: flex;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    font-size: 12px;
-    overflow: hidden;
-    border: 1px solid #dadce0;
+  // Remove any previous custom tabs
+  const existing = mapEl.querySelector('.naver-maptype-tabs');
+  if (existing) existing.remove();
+
+  const tabs = document.createElement('div');
+  tabs.className = 'naver-maptype-tabs';
+  tabs.innerHTML = `
+    <div class="naver-maptype-tab active" data-type="normal">
+      <div class="tab-preview"></div>
+      <div class="tab-label">일반지도</div>
+    </div>
+    <div class="naver-maptype-tab" data-type="satellite">
+      <div class="tab-preview"></div>
+      <div class="tab-label">위성지도</div>
+    </div>
+    <div class="naver-maptype-tab" data-type="terrain">
+      <div class="tab-preview"></div>
+      <div class="tab-label">지형지도</div>
+    </div>
   `;
 
-  toggle.innerHTML = `
-    <div data-type="normal" style="padding: 4px 10px; cursor: pointer; background: #1a73e8; color: white; font-weight: 500;">일반</div>
-    <div data-type="satellite" style="padding: 4px 10px; cursor: pointer; background: white; color: #3c4043;">위성</div>
-  `;
-
-  mapEl.appendChild(toggle);
-
-  const normalBtn = toggle.querySelector('[data-type="normal"]');
-  const satBtn = toggle.querySelector('[data-type="satellite"]');
+  mapEl.appendChild(tabs);
 
   const setActive = (type) => {
-    if (type === 'normal') {
-      normalBtn.style.background = '#1a73e8';
-      normalBtn.style.color = 'white';
-      satBtn.style.background = 'white';
-      satBtn.style.color = '#3c4043';
-    } else {
-      satBtn.style.background = '#1a73e8';
-      satBtn.style.color = 'white';
-      normalBtn.style.background = 'white';
-      normalBtn.style.color = '#3c4043';
-    }
+    tabs.querySelectorAll('.naver-maptype-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
   };
 
-  normalBtn.addEventListener('click', () => {
-    map.setMapTypeId(naverMaps.MapTypeId.NORMAL);
-    setActive('normal');
+  tabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('.naver-maptype-tab');
+    if (!tab) return;
+
+    const type = tab.dataset.type;
+    let mapTypeId;
+
+    if (type === 'normal') {
+      mapTypeId = naverMaps.MapTypeId.NORMAL;
+    } else if (type === 'satellite') {
+      mapTypeId = naverMaps.MapTypeId.SATELLITE;
+    } else if (type === 'terrain') {
+      mapTypeId = naverMaps.MapTypeId.TERRAIN;
+    }
+
+    if (mapTypeId) {
+      map.setMapTypeId(mapTypeId);
+      setActive(type);
+    }
   });
 
-  satBtn.addEventListener('click', () => {
-    map.setMapTypeId(naverMaps.MapTypeId.SATELLITE);
-    setActive('satellite');
-  });
+  // Set initial active based on current map type
+  const current = map.getMapTypeId ? map.getMapTypeId() : naverMaps.MapTypeId.NORMAL;
+  let initialType = 'normal';
+  if (current === naverMaps.MapTypeId.SATELLITE) initialType = 'satellite';
+  else if (current === naverMaps.MapTypeId.TERRAIN) initialType = 'terrain';
+  setActive(initialType);
 
-  // initial state
-  setActive('normal');
+  // Keep in sync if map type changes externally
+  if (naverMaps.Event) {
+    naverMaps.Event.addListener(map, 'maptype_changed', () => {
+      const id = map.getMapTypeId();
+      let t = 'normal';
+      if (id === naverMaps.MapTypeId.SATELLITE) t = 'satellite';
+      else if (id === naverMaps.MapTypeId.TERRAIN) t = 'terrain';
+      setActive(t);
+    });
+  }
+
+  return tabs;
 }
 
 async function initNaverMap(clientId) {
@@ -1647,11 +1728,12 @@ async function initNaverMap(clientId) {
   map = new naverMaps.Map("map", {
     center: new naverMaps.LatLng(SEJONG_OFFICE_VIEW.lat, SEJONG_OFFICE_VIEW.lng),
     zoom: 12,
-    mapTypeControl: true,
-    mapTypeControlOptions: {
-      position: naverMaps.Position.TOP_RIGHT,
+    mapTypeControl: false,  // 네이티브 대신 커스텀 세 개 탭(일반지도/위성지도/지형지도) 사용
+    zoomControl: true,
+    zoomControlOptions: {
+      position: naverMaps.Position.RIGHT_BOTTOM,
+      style: naverMaps.ZoomControlStyle.SMALL,
     },
-    zoomControl: false,   // +/- 버튼 제거 (사용자 요청). 마우스 휠 / 핀치 / 더블클릭으로 확대/축소 가능
     scaleControl: true,
   });
 
@@ -1717,6 +1799,12 @@ async function initNaverMap(clientId) {
 
   // Final safety after full load
   window.addEventListener('load', () => setTimeout(runAdjusts, 80), { once: true });
+
+  // Add custom Naver-style top map type tabs (일반지도 / 위성지도 / 지형지도)
+  // This is to test matching the real Naver Maps UI the user showed.
+  setTimeout(() => {
+    addNaverStyleMapTypeTabs(map, naverMaps);
+  }, 350);
 }
 
 function closeOpenPopups() {
@@ -1877,7 +1965,11 @@ function renderDrawerList(venues, expandRowKey = activeId) {
     cleanDisplayField(venues[0]?.geocode_address) ||
     cleanDisplayField(venues[0]?.address_road) ||
     "";
-  titleEl.textContent = venues.length > 1 ? `이 위치 ${venues.length}곳` : brandNameFromVenue(venues[0]);
+  let displayTitle = venues.length > 1 ? `이 위치 ${venues.length}곳` : brandNameFromVenue(venues[0]);
+  if (!displayTitle || isBadBrandName(displayTitle)) {
+    displayTitle = venues[0]?.permit_name || venues[0]?.name || "상호 정보";
+  }
+  titleEl.textContent = displayTitle;
   addrEl.textContent = addr;
   listEl.innerHTML = "";
 
