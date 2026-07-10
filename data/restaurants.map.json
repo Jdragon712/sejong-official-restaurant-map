@@ -3573,11 +3573,12 @@
       "last_visit_date": "2026-05-20",
       "distinct_depts": 4,
       "match_status": "unmatched",
-      "lat": 36.49531605946737,
-      "lng": 127.25941836470676,
+      "lat": 36.4950624846328,
+      "lng": 127.258791047519,
       "geocode_address": "세종특별자치시 다솜로 50",
       "geocode_provider": "kakao_kw",
-      "geocode_place_name": "송도갈비 세종점"
+      "geocode_place_name": "송도갈비 세종점",
+      "address_road": "세종특별자치시 다솜로 50, 상가2동 1~2층 101, 201호 (어진동, 한뜰마을6단지)"
     },
     {
       "restaurant_id": "venue:9f295917eed5",
@@ -9110,6 +9111,7 @@
       "restaurant_id": "venue:f0b892be8d2a",
       "name": "송도갈비",
       "visit_count_total": 6,
+      "geocode_place_name": "송도갈비 세종점",
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-04-08",
       "distinct_depts": 3,
