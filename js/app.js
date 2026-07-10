@@ -47,6 +47,8 @@ function isBadBrandName(n) {
   if (s.length < 2) return true;
   const lower = s.toLowerCase();
   if (["주", "유", "(주)", "주식회사", "㈜", "농업회사법인"].includes(lower)) return true;
+  // Catch corporate names like "한화커넥트 (주)", "(주)신화케이푸드" when no good geo
+  if (s.includes("(주)") || s.includes("㈜") || s.includes("주식회사")) return true;
   return false;
 }
 
