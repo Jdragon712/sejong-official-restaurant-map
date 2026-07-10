@@ -210,7 +210,8 @@
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-05-29",
       "distinct_depts": 13,
-      "match_status": "unmatched"
+      "match_status": "unmatched",
+      "geocode_place_name": "송도갈비 세종점"
     },
     {
       "restaurant_id": "venue:b205b202bebb",
@@ -232,7 +233,8 @@
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-04-24",
       "distinct_depts": 10,
-      "match_status": "unmatched"
+      "match_status": "unmatched",
+      "geocode_place_name": "한화커넥트 세종점"
     },
     {
       "restaurant_id": "venue:c3bbbe70db14",
