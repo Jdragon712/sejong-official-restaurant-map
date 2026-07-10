@@ -14,13 +14,13 @@ import {
   dropletPinHtml,
   centerMapOn,
   verifyKakaoMapReady,
-} from "./map-kakao.js?v=20260710a";
-import { refineRestaurantCoords } from "./map-geocode.js?v=20260710a";
+} from "./map-kakao.js?v=20260710b";
+import { refineRestaurantCoords } from "./map-geocode.js?v=20260710b";
 import {
   haversineDistanceM,
   mergeOverlappingMarkerItems,
   OVERLAP_VISUAL_RADIUS_M,
-} from "./map-overlap-stack.js?v=20260710a";
+} from "./map-overlap-stack.js?v=20260710b";
 
 const SOURCES = [
   ["세종 일반음식점", "https://www.data.go.kr/data/15081905/fileData.do"],
@@ -1666,11 +1666,7 @@ async function initNaverMap(clientId) {
     mapTypeControlOptions: {
       position: naverMaps.Position.TOP_RIGHT,
     },
-    zoomControl: true,
-    zoomControlOptions: {
-      position: naverMaps.Position.RIGHT_BOTTOM,
-      style: naverMaps.ZoomControlStyle.SMALL,
-    },
+    zoomControl: false,  // +/- 버튼 제거 (사용자 요청). 마우스 휠/핀치/더블클릭으로 확대 가능
     scaleControl: true,
   });
 
