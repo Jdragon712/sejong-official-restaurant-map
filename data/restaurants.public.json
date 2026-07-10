@@ -162,7 +162,8 @@
       "address_road": "세종특별자치시 도움8로 91, 세종마치 3층 307호 (어진동)",
       "address_jibun": "세종특별자치시 어진동 610 세종마치",
       "category_app": "일반음식점",
-      "match_status": "exact"
+      "match_status": "exact",
+      "geocode_place_name": "모리해물장"
     },
     {
       "restaurant_id": "venue:b2d52eee86e1",
