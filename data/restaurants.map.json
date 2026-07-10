@@ -273,7 +273,7 @@
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점",
-      "geocode_place_name": ""
+      "geocode_place_name": "송도갈비 세종점"
     },
     {
       "restaurant_id": "venue:b205b202bebb",
@@ -305,7 +305,8 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
+      "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점",
+      "geocode_place_name": "한화커넥트 세종점"
     },
     {
       "restaurant_id": "venue:c3bbbe70db14",
