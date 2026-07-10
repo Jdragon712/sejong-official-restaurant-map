@@ -262,7 +262,7 @@
     },
     {
       "restaurant_id": "venue:6d8036033fed",
-      "name": "(주)신화케이푸드",
+      "name": "송도 갈비 세종점",
       "visit_count_total": 136,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-05-29",
@@ -2774,7 +2774,7 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "(주)오디푸드시스템 오발탄 세종점",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
     },
     {
@@ -3567,7 +3567,7 @@
     },
     {
       "restaurant_id": "venue:44617643b03c",
-      "name": "세종송도갈비",
+      "name": "송도 갈비 세종점",
       "visit_count_total": 16,
       "visit_rank_bucket": "high",
       "last_visit_date": "2026-05-20",
@@ -6263,7 +6263,7 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "(주)오디푸드시스템",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
     },
     {
@@ -8303,7 +8303,7 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "(주)더팬테스틱 브래드카페 좋은아침페스츄리 세종보",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
     },
     {
@@ -9109,7 +9109,7 @@
     },
     {
       "restaurant_id": "venue:f0b892be8d2a",
-      "name": "송도갈비",
+      "name": "송도 갈비 세종점",
       "visit_count_total": 6,
       "geocode_place_name": "송도갈비 세종점",
       "visit_rank_bucket": "high",
@@ -9846,7 +9846,7 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "(주)제이티알",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
     },
     {
@@ -16844,7 +16844,7 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "(주)더팬테스틱 브래드카페 좋은아침페스츄리",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
     },
     {
@@ -28880,7 +28880,7 @@
       "lng": 127.27075210161968,
       "geocode_address": "세종특별자치시 도움8로 81",
       "geocode_provider": "expense_name_peer",
-      "geocode_place_name": "송도갈비 세종점",
+      "geocode_place_name": "(주)에스디인터내셔날 나인블럭 세종점",
       "geocode_linked_from": "삼선미 나주곰탕 소머리국밥 세종청사점"
     },
     {
