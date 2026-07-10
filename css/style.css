@@ -1272,3 +1272,80 @@ body.is-maintenance .layout,
 body.is-maintenance .site-footer {
   visibility: hidden;
 }
+
+/* Custom Naver Maps style top tabs (일반지도 / 위성지도 / 지형지도)
+   to closely match the real naver.com map type selector look.
+   Positioned inside #map so it floats over the map. */
+.naver-maptype-tabs {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  border: 1px solid #d1d5db;
+}
+
+.naver-maptype-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px 3px;
+  cursor: pointer;
+  color: #202124;
+  min-width: 52px;
+  border-right: 1px solid #e5e7eb;
+  transition: background 0.1s ease;
+}
+
+.naver-maptype-tab:last-child {
+  border-right: none;
+}
+
+.naver-maptype-tab:hover {
+  background: #f8f9fa;
+}
+
+.naver-maptype-tab.active {
+  border: 2px solid #1a73e8;
+  background: #fff;
+  color: #202124;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.3);
+}
+
+.naver-maptype-tab .tab-preview {
+  width: 32px;
+  height: 18px;
+  border-radius: 2px;
+  background: #f1f3f4;
+  border: 1px solid #dadce0;
+  margin-bottom: 2px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);
+}
+
+.naver-maptype-tab.active .tab-preview {
+  border-color: #1a73e8;
+}
+
+.naver-maptype-tab[data-type="satellite"] .tab-preview {
+  background: #1e4620;
+}
+
+.naver-maptype-tab[data-type="terrain"] .tab-preview {
+  background: #c8d6a8;
+}
+
+.naver-maptype-tab .tab-label {
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: -0.1px;
+}
